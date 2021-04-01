@@ -5,7 +5,7 @@ Keeps track of the place where the vehicle moves and sleeps and gives an overvie
 
 ## Features
 - Store the gps position at a certain interval
-- 
+- Display the current trip
 
 ## Requirements
 TODO
