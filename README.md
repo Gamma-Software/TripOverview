@@ -27,3 +27,6 @@ TODO
   - Display the date_time/lat/lon/km_travelled
   - Trace the position
   - Dynamically see the progression
+
+## Contribute
+Read the CONTRIBUTING.md for details
