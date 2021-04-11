@@ -11,5 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog
 - Readme
 - Python requirements
+- TimestampGeoJsonWrapper class to interact with a database and convert the custom geoposition to TimestampGeoJson format
 
 ## [x.x.x] - year-mo-dd
