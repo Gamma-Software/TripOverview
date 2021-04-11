@@ -1,5 +1,7 @@
 import sqlite3
 from sqlite3 import Error
+import pandas as pd
+import geojson
 
 
 class TimestampGeoJsonWrapper:
@@ -25,7 +27,8 @@ class TimestampGeoJsonWrapper:
         CREATE TABLE IF NOT EXISTS trip_geo (
           timestamp INTEGER TIMESTAMP,
           lat FLOAT LATITUDE,
-          lon FLOAT LONGITUDE
+          lon FLOAT LONGITUDE,
+          elev FLOAT ELEVATION
         );
         """
         self.execute_query(self.connection, create_users_table)
@@ -43,12 +46,44 @@ class TimestampGeoJsonWrapper:
         except Error as e:
             print(f"The error '{e}' occurred")
 
+    def execute_read_query(self, query):
+        cursor = self.connection.cursor()
+        result = None
+        try:
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+        except Error as e:
+            print(f"The error '{e}' occurred")
+
     def commit_position(self, timestamp, position):
         insert_stmt = (
-            "INSERT INTO trip_geo (timestamp, lat, lon) "
-            "VALUES (?, ?, ?)"
+            "INSERT INTO trip_geo (timestamp, lat, lon, elev) "
+            "VALUES (?, ?, ?, ?)"
         )
         self.execute_query(insert_stmt, (timestamp, position.lat, position.lon))
+
+    def query_positions(self):
+        positions = pd.read_sql_query('''SELECT * from trip_geo''', self.connection)
+
+    def pandas2geojson(self, df):
+        features = []
+        insert_features = lambda x: features.append(
+            geojson.Feature(geometry=geojson.LineString((x["lat"],
+                                                         x["lon"],
+                                                         x["elev"])),
+                            properties=dict(times=x["timestamp"],
+                                            style={'color': '#d6604d'},
+                                            icon='circle',
+                                            iconstyle={
+                                                'fillColor': '#d6604d',
+                                                'fillOpacity': 0.8,
+                                                'stroke': 'true',
+                                                'radius': 7
+                                            })))
+        df.apply(insert_features, axis=1)
+        return geojson.FeatureCollection(features)
+
 
 #if __name__ == '__main__':
 #    connection = create_connection(r"D:\sources\perso\TripOverview\prototype\data\pythonsqlite.db")
