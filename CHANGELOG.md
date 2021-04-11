@@ -10,5 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License
 - Changelog
 - Readme
+- Python requirements
 
 ## [x.x.x] - year-mo-dd
