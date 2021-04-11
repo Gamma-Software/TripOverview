@@ -27,6 +27,8 @@ TODO
   - Display the date_time/lat/lon/km_travelled
   - Trace the position
   - Dynamically see the progression
+  - Add the company logo
+- Use https://openmaptiles.org/docs/ to create an offline map server and download the map tiles in https://data.maptiler.com/downloads/planet/
 
 ## Contribute
 Read the CONTRIBUTING.md for details
