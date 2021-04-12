@@ -10,9 +10,11 @@ class TimestampGeoJsonWrapper:
 
     # Database instance
     database = None
+    geojsondata = None
 
     def __init__(self, db_file):
         self.connection = self.create_connection(db_file)
+        self.geojsondata = None
 
     def create_connection(self, db_file):
         """ create a database connection to a SQLite database """
@@ -64,7 +66,7 @@ class TimestampGeoJsonWrapper:
         self.execute_query(insert_stmt, (timestamp, position.lat, position.lon))
 
     def query_positions(self):
-        positions = pd.read_sql_query('''SELECT * from trip_geo''', self.connection)
+        self.geojsondata = self.pandas2geojson(pd.read_sql_query('''SELECT * from trip_geo''', self.connection))
 
     def pandas2geojson(self, df):
         features = []
@@ -85,5 +87,4 @@ class TimestampGeoJsonWrapper:
         return geojson.FeatureCollection(features)
 
 
-#if __name__ == '__main__':
-#    connection = create_connection(r"D:\sources\perso\TripOverview\prototype\data\pythonsqlite.db")
+geojson.utils.generate_random
