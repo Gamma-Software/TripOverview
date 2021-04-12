@@ -28,6 +28,7 @@ TODO
   - Trace the position
   - Dynamically see the progression
   - Add the company logo
+  - Photos/Timelapse taken during the road trip
 - Use https://openmaptiles.org/docs/ to create an offline map server and download the map tiles in https://data.maptiler.com/downloads/planet/
 
 ## Contribute
