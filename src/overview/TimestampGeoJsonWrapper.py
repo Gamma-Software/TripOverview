@@ -7,13 +7,15 @@ import geojson
 class TimestampGeoJsonWrapper:
     """This class wraps the Folium TimestampGeoJson class to add functions like
     connecting to a database with simple custom geographic position"""
+    # timestamp_geo_json = TimestampGeoJsonWrapper("file")
+    # timestamp_geo_json.query_positions()
 
     # Database instance
     database = None
     geojsondata = None
 
-    def __init__(self, db_file):
-        self.connection = self.create_connection(db_file)
+    def __init__(self, db_filepath):
+        self.connection = self.create_connection(db_filepath)
         self.geojsondata = None
 
     def create_connection(self, db_file):
@@ -87,4 +89,5 @@ class TimestampGeoJsonWrapper:
         return geojson.FeatureCollection(features)
 
 
-geojson.utils.generate_random
+#timestamp_geo_json = TimestampGeoJsonWrapper("file")
+#timestamp_geo_json.query_positions()
