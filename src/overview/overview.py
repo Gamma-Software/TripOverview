@@ -1,22 +1,46 @@
-import folium
-from folium import plugins
-m = folium.Map([41.97, 2.81])
+#!/usr/bin/python3
+import argparse
+import typing
+import sys
 
-minimap = plugins.MiniMap(toggle_display=True)
-m.add_child(minimap)
 
-folium.TileLayer("cartodbpositron").add_to(m)
-folium.TileLayer("openstreetmap").add_to(m)
-folium.TileLayer("Stamen Terrain").add_to(m)
-folium.LayerControl(collapsed=False, position="topleft").add_to(m)
+def save_gps_position(gps_position):
+    print("save_position")
 
-plugins.Geocoder().add_to(m)
-plugins.LocateControl().add_to(m)
 
-plugins.Fullscreen(
-    title="Expand me",
-    title_cancel="Exit me",
-    force_separate_button=True,
-).add_to(m)
+def create_site():
+    print("create site")
 
-m.save("index.html")
+
+def main():
+    print("main")
+
+
+def manual():
+    print("Create a map in html, save gps position")
+
+
+def parse_args(cmd_args: typing.Sequence[str]):
+    parser = argparse.ArgumentParser(prog='overview')
+    parser.add_argument('--version', help='Prints Overview\'s version', action="store_true")
+    subparsers = parser.add_subparsers(help='sub-command help')
+
+    save_gps_position_parser = subparsers.add_parser('save_gps_position', help='Save GPS position')
+    save_gps_position_parser.add_argument('gps_position', type=str, help='gps_position [latitude, longitudinal,'
+                                                                         ' elevation]')
+    save_gps_position_parser.set_defaults(func=save_gps_position)
+
+    create_site_parser = subparsers.add_parser('create_site', help="Generate the web site to display the photos and"
+                                                                   " current trip")
+    create_site_parser.set_defaults(func=create_site)
+
+    parser_man = subparsers.add_parser("man", help="Open overview manual")
+    parser_man.set_defaults(func=manual)
+
+    parser.set_defaults(func=lambda x: parser.print_help())
+    return parser.parse_args(args=cmd_args)
+
+
+if __name__ == '__main__':
+    args = parse_args(sys.argv[1:])
+    sys.exit(args.func(args))
