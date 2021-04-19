@@ -5,49 +5,52 @@ from src.overview.OverviewDatabase import OverviewDatabase
 
 
 class TestOverviewDatabase(TestCase):
+    unit_test_data_folder = os.path.join(os.getcwd(), "tests", "unit", "data")
+
     def test_connect_to_database_not_exist(self):
         # Database does not exist
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "test.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"))
         self.assertEqual(timestamp_geo_json.database is None, True)
         timestamp_geo_json.close_database()
 
         # Database does not exist
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "test.db"), False)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"), False)
         self.assertEqual(timestamp_geo_json.database is None, True)
         timestamp_geo_json.close_database()
 
         # Database does not exist let it create
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "test.db"), True)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"), True)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         # Remove test.db generated if exists
-        if os.path.exists(os.path.join(os.getcwd(), "data", "test.db")):
-            os.remove(os.path.join(os.getcwd(), "data", "test.db"))
+        if os.path.exists(os.path.join(self.unit_test_data_folder, "test.db")):
+            os.remove(os.path.join(self.unit_test_data_folder, "test.db"))
 
     def test_connect_to_database_exist(self):
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "pythonsqlite.db"), True)
+        print(os.getcwd())
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"), True)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "pythonsqlite.db"), False)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"), False)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
     def test_sleeping_position_safeguard(self):
         # Test safeguards
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
         sleeping_position = timestamp_geo_json.get_sleeping_locations(static_position_threshold=-1.0,
                                                                       min_distance=10000.0)
         self.assertEqual(sleeping_position, None)
@@ -63,7 +66,7 @@ class TestOverviewDatabase(TestCase):
     def test_sleeping_position_algo(self):
         # Test the algorithm (arr_to_compare was previously computed and retrieve from known database)
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
         sleeping_position = timestamp_geo_json.get_sleeping_locations(static_position_threshold=1.0,
                                                                       min_distance=10000.0)
         arr_to_compare = [[1618820065.0, -49.78690939348198, -3.805875048742564, -84.47370043631621],
@@ -95,12 +98,12 @@ class TestOverviewDatabase(TestCase):
 
     def test_last_step(self):
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "no_last_step.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
         self.assertEqual(last_step, 0)
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "last_step.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
         self.assertEqual(last_step, 1)
 
