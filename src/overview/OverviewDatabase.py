@@ -123,6 +123,18 @@ class OverviewDatabase:
         if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
             print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
 
+    def describe_trip(self):
+        """
+        Describe the current trip:
+            - The total duration (number of days)
+            - The number of country traveled
+            - The total km travaled
+        :return: a list of the description and a string to concatenate the values.
+            for instance: (10, 2, 1405, "The current trip lasted 10 days, 2 country traveled to for a total of 1405 km)
+        """
+        print("test")
+        return 0
+
     def get_last_step(self):
         """
         :return: The last step. It will return 0 if the trip has not began
