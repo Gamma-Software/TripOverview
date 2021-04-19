@@ -38,6 +38,7 @@ class OverviewDatabase:
     geojsondata = None
 
     def __init__(self):
+        """ Initiation """
         self.raw_data = None
         self.geojsondata = None
 
@@ -61,16 +62,26 @@ class OverviewDatabase:
           lat FLOAT LATITUDE,
           lon FLOAT LONGITUDE,
           elev FLOAT ELEVATION,
-          speed FLOAT SPEED
+          speed FLOAT SPEED,
+          current_step INT CURRENT_STEP
         );
         """
-        self.execute_query(create_users_table, create)
+        self.execute_query(query=create_users_table, create=create)
 
     def close_database(self):
+        """ Closes the database """
         if self.database:
             self.database.close()
 
     def execute_query(self, query, create=False, data=None):
+        """
+        Execute SQL query
+        :param query: SQL query
+        :param create: if set to True, force the creation of the table
+        :param data: that comes with the query
+        :return: success False if the database is not initiated or an error occurred
+        """
+        success = False
         if self.database or create:
             cursor = self.database.cursor()
             try:
@@ -79,31 +90,65 @@ class OverviewDatabase:
                 else:
                     cursor.execute(query)
                 self.database.commit()
-                print("Query executed successfully")
+                success = True
+                print(f"Query '{query}' executed successfully")
             except Error as e:
                 print(f"The error '{e}' occurred")
+        return success
 
     def execute_read_query(self, query):
+        """
+        Read the database with a SQL query
+        :param query: SQL query
+        :return: success, result : False if the database is not initiated or an error occurred
+        """
+        success = False
+        result = None
         if self.database:
             cursor = self.database.cursor()
-            result = None
             try:
                 cursor.execute(query)
                 result = cursor.fetchall()
-                return result
+                success = True
+                print(f"Query '{query}' executed successfully and resulted '{result}'")
             except Error as e:
                 print(f"The error '{e}' occurred")
+        return success, result
 
-    def commit_position(self, timestamp, lat, lon, elev, speed):
+    def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
         insert_stmt = (
-            "INSERT INTO trip_geo (timestamp, lat, lon, elev) "
-            "VALUES (?, ?, ?, ?)"
+            "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
+            "VALUES (?, ?, ?, ?, ?, ?)"
         )
-        self.execute_query(insert_stmt, (timestamp, lat, lon, elev, speed))
+        if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
+            print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
 
-    def query_raw_positions(self, force=False):
+    def get_last_step(self):
+        """
+        :return: The last step. It will return 0 if the trip has not began
+        """
+        # Retrieve raw position
+        self.query_raw_database()
+        # Copy current step raw data
+        # TODO avoid copying the entire dataframe
+        steps = self.raw_data
+        # Filter out the -1 steps
+        steps = steps[steps.current_step != -1]
+
+        last_step = 0
+        if len(steps) > 0:
+            # Get the last step
+            last_step = steps["current_step"].iloc[-1]
+        return last_step
+
+    def query_raw_database(self, force_update=False):
+        """
+        Query the raw database and store it into a Pandas Dataframe
+        :param force_update: forces the update of the dataframe even though the self.raw_data is not empty
+        :return: nothing but the object now store the raw_data
+        """
         if self.database:
-            if force or not self.raw_data:
+            if force_update or not self.raw_data:
                 self.raw_data = pd.read_sql_query('''SELECT * from trip_geo''', self.database)
 
     def wrap_to_geojson(x):
@@ -139,7 +184,7 @@ class OverviewDatabase:
             return None
 
         # Retrieve raw position
-        self.query_raw_positions()
+        self.query_raw_database()
         sleeping_df = self.raw_data
         # Filter the static position
         sleeping_df = sleeping_df[sleeping_df.speed <= static_position_threshold]
