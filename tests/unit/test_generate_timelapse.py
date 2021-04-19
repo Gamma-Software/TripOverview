@@ -93,6 +93,16 @@ class TestOverviewDatabase(TestCase):
                           [1622746065.0, -27.949979158501407, -142.8203118402694, 863.0530667251164]]
         self.assertEqual(sleeping_position.values.tolist(), arr_to_compare)
 
+    def test_last_step(self):
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "no_last_step.db"))
+        last_step = timestamp_geo_json.get_last_step()
+        self.assertEqual(last_step, 0)
+
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "last_step.db"))
+        last_step = timestamp_geo_json.get_last_step()
+        self.assertEqual(last_step, 10)
 
 if __name__ == '__main__':
     unittest.main()
