@@ -65,7 +65,7 @@ class OverviewDatabase:
           current_step INT CURRENT_STEP
         );
         """
-        self.execute_query(create_users_table, create)
+        self.execute_query(query=create_users_table, create=create)
 
     def close_database(self):
         if self.database:
@@ -100,7 +100,7 @@ class OverviewDatabase:
             "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?)"
         )
-        self.execute_query(insert_stmt, (timestamp, lat, lon, elev, speed, current_step))
+        self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step))
 
     def get_last_step(self):
         """
