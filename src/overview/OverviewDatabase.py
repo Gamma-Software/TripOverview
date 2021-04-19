@@ -61,7 +61,8 @@ class OverviewDatabase:
           lat FLOAT LATITUDE,
           lon FLOAT LONGITUDE,
           elev FLOAT ELEVATION,
-          speed FLOAT SPEED
+          speed FLOAT SPEED,
+          current_step INT CURRENT_STEP
         );
         """
         self.execute_query(create_users_table, create)
@@ -94,12 +95,29 @@ class OverviewDatabase:
             except Error as e:
                 print(f"The error '{e}' occurred")
 
-    def commit_position(self, timestamp, lat, lon, elev, speed):
+    def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
         insert_stmt = (
-            "INSERT INTO trip_geo (timestamp, lat, lon, elev) "
-            "VALUES (?, ?, ?, ?)"
+            "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
+            "VALUES (?, ?, ?, ?, ?, ?)"
         )
-        self.execute_query(insert_stmt, (timestamp, lat, lon, elev, speed))
+        self.execute_query(insert_stmt, (timestamp, lat, lon, elev, speed, current_step))
+
+    def get_last_step(self):
+        """
+        :return: The last step. It will return 0 if the trip has not began
+        """
+        # Retrieve raw position
+        self.query_raw_positions()
+        # Copy current step raw data
+        steps = self.raw_data["current_step"]
+        # Filter out the -1 steps
+        steps = steps[steps.current_step != -1]
+
+        last_step = 0
+        if len(steps) > 0:
+            # Get the last step
+            last_step = steps["current_step"].iloc[-1]
+        return last_step
 
     def query_raw_positions(self, force=False):
         if self.database:
