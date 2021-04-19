@@ -38,6 +38,7 @@ class OverviewDatabase:
     geojsondata = None
 
     def __init__(self):
+        """ Initiation """
         self.raw_data = None
         self.geojsondata = None
 
@@ -68,6 +69,7 @@ class OverviewDatabase:
         self.execute_query(query=create_users_table, create=create)
 
     def close_database(self):
+        """ Closes the database """
         if self.database:
             self.database.close()
 
@@ -126,7 +128,7 @@ class OverviewDatabase:
         :return: The last step. It will return 0 if the trip has not began
         """
         # Retrieve raw position
-        self.query_raw_positions()
+        self.query_raw_database()
         # Copy current step raw data
         # TODO avoid copying the entire dataframe
         steps = self.raw_data
@@ -139,9 +141,14 @@ class OverviewDatabase:
             last_step = steps["current_step"].iloc[-1]
         return last_step
 
-    def query_raw_positions(self, force=False):
+    def query_raw_database(self, force_update=False):
+        """
+        Query the raw database and store it into a Pandas Dataframe
+        :param force_update: forces the update of the dataframe even though the self.raw_data is not empty
+        :return: nothing but the object now store the raw_data
+        """
         if self.database:
-            if force or not self.raw_data:
+            if force_update or not self.raw_data:
                 self.raw_data = pd.read_sql_query('''SELECT * from trip_geo''', self.database)
 
     def wrap_to_geojson(x):
@@ -177,7 +184,7 @@ class OverviewDatabase:
             return None
 
         # Retrieve raw position
-        self.query_raw_positions()
+        self.query_raw_database()
         sleeping_df = self.raw_data
         # Filter the static position
         sleeping_df = sleeping_df[sleeping_df.speed <= static_position_threshold]
