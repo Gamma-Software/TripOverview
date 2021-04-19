@@ -128,12 +128,17 @@ class OverviewDatabase:
         Describe the current trip:
             - The total duration (number of days)
             - The number of country traveled
-            - The total km travaled
+            - The total km traveled
         :return: a list of the description and a string to concatenate the values.
-            for instance: (10, 2, 1405, "The current trip lasted 10 days, 2 country traveled to for a total of 1405 km)
+            for instance: (10, 2, 1405, "The current trip lasted 10 days, 2 country traveled to for a total of 1405 km")
         """
-        print("test")
-        return 0
+        total_duration = country_traveled = total_km_traveled = 0
+        self.query_raw_database()
+        raw_data_copy = self.raw_data
+        # TODO
+        return (total_duration, country_traveled, total_km_traveled,
+                f"The current trip lasted '{total_duration}' days,"
+                f" '{country_traveled}' country traveled to for a total of '{total_km_traveled}' km")
 
     def get_last_step(self):
         """
