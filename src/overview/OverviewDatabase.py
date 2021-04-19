@@ -72,6 +72,14 @@ class OverviewDatabase:
             self.database.close()
 
     def execute_query(self, query, create=False, data=None):
+        """
+        Execute SQL query
+        :param query: SQL query
+        :param create: if set to True, force the creation of the table
+        :param data: that comes with the query
+        :return: success False if the database is not initiated or an error occurred
+        """
+        success = False
         if self.database or create:
             cursor = self.database.cursor()
             try:
@@ -80,27 +88,38 @@ class OverviewDatabase:
                 else:
                     cursor.execute(query)
                 self.database.commit()
-                print("Query executed successfully")
+                success = True
+                print(f"Query '{query}' executed successfully")
             except Error as e:
                 print(f"The error '{e}' occurred")
+        return success
 
     def execute_read_query(self, query):
+        """
+        Read the database with a SQL query
+        :param query: SQL query
+        :return: success, result : False if the database is not initiated or an error occurred
+        """
+        success = False
+        result = None
         if self.database:
             cursor = self.database.cursor()
-            result = None
             try:
                 cursor.execute(query)
                 result = cursor.fetchall()
-                return result
+                success = True
+                print(f"Query '{query}' executed successfully and resulted '{result}'")
             except Error as e:
                 print(f"The error '{e}' occurred")
+        return success, result
 
     def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
         insert_stmt = (
             "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?)"
         )
-        self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step))
+        if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
+            print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
 
     def get_last_step(self):
         """
@@ -109,7 +128,8 @@ class OverviewDatabase:
         # Retrieve raw position
         self.query_raw_positions()
         # Copy current step raw data
-        steps = self.raw_data["current_step"]
+        # TODO avoid copying the entire dataframe
+        steps = self.raw_data
         # Filter out the -1 steps
         steps = steps[steps.current_step != -1]
 

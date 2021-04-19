@@ -102,7 +102,8 @@ class TestOverviewDatabase(TestCase):
         timestamp_geo_json = OverviewDatabase()
         timestamp_geo_json.connect_to_database(os.path.join(os.getcwd(), "data", "last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
-        self.assertEqual(last_step, 10)
+        self.assertEqual(last_step, 1)
+
 
 if __name__ == '__main__':
     unittest.main()
