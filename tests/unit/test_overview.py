@@ -62,6 +62,7 @@ class TestOverviewDatabase(TestCase):
         sleeping_position = timestamp_geo_json.get_sleeping_locations(static_position_threshold=1.0,
                                                                       min_distance=-10000.0)
         self.assertEqual(sleeping_position, None)
+        timestamp_geo_json.close_database()
 
     def test_sleeping_position_algo(self):
         # Test the algorithm (arr_to_compare was previously computed and retrieve from known database)
@@ -95,17 +96,41 @@ class TestOverviewDatabase(TestCase):
                           [1622432065.0, -14.91340773935437, 42.82529433417446, 223.81945003652766],
                           [1622746065.0, -27.949979158501407, -142.8203118402694, 863.0530667251164]]
         self.assertEqual(sleeping_position.values.tolist(), arr_to_compare)
+        timestamp_geo_json.close_database()
 
     def test_last_step(self):
         timestamp_geo_json = OverviewDatabase()
         timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
+        timestamp_geo_json.close_database()
         self.assertEqual(last_step, 0)
 
         timestamp_geo_json = OverviewDatabase()
         timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
+        timestamp_geo_json.close_database()
         self.assertEqual(last_step, 1)
+
+    def test_last_step(self):
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_last_step.db"))
+        last_step = timestamp_geo_json.get_last_step()
+        timestamp_geo_json.close_database()
+        self.assertEqual(last_step, 0)
+
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "last_step.db"))
+        last_step = timestamp_geo_json.get_last_step()
+        timestamp_geo_json.close_database()
+        self.assertEqual(last_step, 1)
+
+    def test_describe_trip(self):
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "describe.db"))
+        describe = timestamp_geo_json.describe_trip()
+        timestamp_geo_json.close_database()
+        self.assertEqual(describe, (12, 1, 0.15,
+                                    "The current trip lasted 12 days, 1 country traveled for a total of 0.15 km"))
 
 
 if __name__ == '__main__':
