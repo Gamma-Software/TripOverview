@@ -129,10 +129,25 @@ class OverviewDatabase:
     def check_database_errors(self):
         """
         Check the consistency and potential error in the database, such as timestamp desynchronization
-        :return:
+        :return: [(error_code, message)*]
+            error_code = 0 : OK
+            error_code = 1 : TIMESTAMP INCONSISTENCY
         """
-        # TODO
-        print("")
+        error_code = []
+        message = []
+        self.query_raw_database()
+        data_copy = self.raw_data.copy()
+        for timestamp_index in range(1, len(data_copy["timestamp"])):
+            # Check that the timestamp is correct throughout the database
+            print(data_copy["timestamp"].iloc[timestamp_index - 1])
+            print(data_copy["timestamp"].iloc[timestamp_index])
+            if data_copy["timestamp"].iloc[timestamp_index - 1] > data_copy["timestamp"].iloc[timestamp_index]:
+                error_code.append(1)
+                message.append("Timestamp is inconsistent")
+        if len(error_code) == 0:
+            error_code.append(0)
+            message.append("Ok")
+        return [(error_code[i], message[i]) for i in range(len(error_code))]
 
     def describe_trip(self):
         """

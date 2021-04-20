@@ -132,6 +132,19 @@ class TestOverviewDatabase(TestCase):
         self.assertEqual(describe, (12, 1, 0.15,
                                     "The current trip lasted 12 days, 1 country traveled for a total of 0.15 km"))
 
+    def test_check_database_errors(self):
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "inconsistent_timestamp.db"))
+        error = timestamp_geo_json.check_database_errors()
+        timestamp_geo_json.close_database()
+        self.assertEqual(error, [(1, "Timestamp is inconsistent")])
+
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "describe.db"))
+        error = timestamp_geo_json.check_database_errors()
+        timestamp_geo_json.close_database()
+        self.assertEqual(error, [(0, "Ok")])
+
 
 if __name__ == '__main__':
     unittest.main()
