@@ -134,11 +134,25 @@ class OverviewDatabase:
         """
         total_duration = country_traveled = total_km_traveled = 0
         self.query_raw_database()
-        raw_data_copy = self.raw_data
+
+        """Compute the total duration"""
+        data_copy = self.raw_data
+        data_copy['date'] = data_copy["timestamp"].apply(
+            lambda x: pd.to_datetime(x, unit="s").date())
+        total_duration = (data_copy['date'].iloc[-1] - data_copy['date'].iloc[0]).days
+
+        """Compute the total km traveled"""
+        for i in range(1, len(data_copy[["lat", "lon"]])):
+            total_km_traveled += distance(data_copy[["lat", "lon"]].iloc[i - 1].values,
+                                          data_copy[["lat", "lon"]].iloc[i].values)
+        total_km_traveled = round(total_km_traveled, 2)
+
+        """Compute the number of country traveled"""
         # TODO
+
         return (total_duration, country_traveled, total_km_traveled,
-                f"The current trip lasted '{total_duration}' days,"
-                f" '{country_traveled}' country traveled to for a total of '{total_km_traveled}' km")
+                f"The current trip lasted {total_duration} days,"
+                f" {country_traveled} country traveled for a total of {total_km_traveled} km")
 
     def get_last_step(self):
         """
