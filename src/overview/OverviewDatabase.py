@@ -139,7 +139,7 @@ class OverviewDatabase:
         self.query_raw_database()
 
         """Compute the total duration"""
-        data_copy = self.raw_data
+        data_copy = self.raw_data.copy()
         data_copy['date'] = data_copy["timestamp"].apply(
             lambda x: pd.to_datetime(x, unit="s").date())
         total_duration = (data_copy['date'].iloc[-1] - data_copy['date'].iloc[0]).days
@@ -172,7 +172,7 @@ class OverviewDatabase:
         self.query_raw_database()
         # Copy current step raw data
         # TODO avoid copying the entire dataframe
-        steps = self.raw_data
+        steps = self.raw_data.copy()
         # Filter out the -1 steps
         steps = steps[steps.current_step != -1]
 
@@ -226,7 +226,7 @@ class OverviewDatabase:
 
         # Retrieve raw position
         self.query_raw_database()
-        sleeping_df = self.raw_data
+        sleeping_df = self.raw_data.copy()
         # Filter the static position
         sleeping_df = sleeping_df[sleeping_df.speed <= static_position_threshold]
         # Get the dates
