@@ -16,12 +16,12 @@ def distance(origin, destination):
     """
     lat1, lon1 = origin
     lat2, lon2 = destination
-    radius = 6371 # km
+    radius = 6371  # earth radius in km
 
-    dlat = math.radians(lat2-lat1)
-    dlon = math.radians(lon2-lon1)
-    a = math.sin(dlat/2) * math.sin(dlat/2) + math.cos(math.radians(lat1)) \
-        * math.cos(math.radians(lat2)) * math.sin(dlon/2) * math.sin(dlon/2)
+    diff_lat = math.radians(lat2-lat1)
+    diff_lon = math.radians(lon2-lon1)
+    a = math.sin(diff_lat/2) * math.sin(diff_lat/2) + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(diff_lon/2) * math.sin(diff_lon/2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = radius * c
 
@@ -38,6 +38,7 @@ class OverviewDatabase:
     database = None
     raw_data = None
     geojsondata = None
+
 
     def __init__(self):
         """ Initiation """
