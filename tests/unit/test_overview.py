@@ -129,8 +129,8 @@ class TestOverviewDatabase(TestCase):
         timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "describe.db"))
         describe = timestamp_geo_json.describe_trip()
         timestamp_geo_json.close_database()
-        self.assertEqual(describe, (12, 0, 0.15,
-                                    "The current trip lasted 12 days, 0 country traveled for a total of 0.15 km"))
+        self.assertEqual(describe, (12, 1, 0.15,
+                                    "The current trip lasted 12 days, 1 country traveled for a total of 0.15 km"))
 
 
 if __name__ == '__main__':

@@ -130,7 +130,7 @@ class OverviewDatabase:
             - The number of country traveled
             - The total km traveled
         :return: a list of the description and a string to concatenate the values.
-            for instance: (10, 2, 1405, "The current trip lasted 10 days, 2 country traveled to for a total of 1405 km")
+            for instance: (10, 2, 1405.14, "The current trip lasted 10 days, 2 country traveled to for a total of 1405.14 km")
         """
         total_duration = country_traveled = total_km_traveled = 0
         self.query_raw_database()
@@ -142,13 +142,20 @@ class OverviewDatabase:
         total_duration = (data_copy['date'].iloc[-1] - data_copy['date'].iloc[0]).days
 
         """Compute the total km traveled"""
+        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
         for i in range(1, len(data_copy[["lat", "lon"]])):
             total_km_traveled += distance(data_copy[["lat", "lon"]].iloc[i - 1].values,
                                           data_copy[["lat", "lon"]].iloc[i].values)
+            # Every X km check if the car as changed of
+            print(rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values]))
+            data_copy['country'] = rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values])[0]["cc"]
+            print(data_copy['country'])
+
         total_km_traveled = round(total_km_traveled, 2)
 
         """Compute the number of country traveled"""
-        # TODO
+        for i in range(1, len(data_copy[["lat", "lon"]])):
+            country_traveled = len(data_copy.drop_duplicates(subset=["country"])["country"])
 
         return (total_duration, country_traveled, total_km_traveled,
                 f"The current trip lasted {total_duration} days,"
