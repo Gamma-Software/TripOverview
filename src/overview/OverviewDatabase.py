@@ -126,6 +126,14 @@ class OverviewDatabase:
         if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
             print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
 
+    def check_database_errors(self):
+        """
+        Check the consistency and potential error in the database, such as timestamp desynchronization
+        :return:
+        """
+        # TODO
+        print("")
+
     def describe_trip(self):
         """
         Describe the current trip:
