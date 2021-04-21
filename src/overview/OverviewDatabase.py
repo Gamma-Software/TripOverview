@@ -98,7 +98,7 @@ class OverviewDatabase:
                     cursor.execute(query)
                 self.database.commit()
                 success = True
-                print(f"Query '{query}' executed successfully")
+                print(f"Query '{query}' executed successfully to enter those data:", data)
             except Error as e:
                 print(f"The error '{e}' occurred")
         return success
@@ -122,7 +122,7 @@ class OverviewDatabase:
                 print(f"The error '{e}' occurred")
         return success, result
 
-    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=-1, current_step=-1):
+    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=0, current_step=-1):
         """
         Commit position
         :param timestamp:
@@ -138,20 +138,22 @@ class OverviewDatabase:
 
         """compute km"""
         # If the kilometer source is with the GPS delta positions
-        if self.kilometer_source == "GPS":
+        if self.kilometer_source == "GPS" and not self.raw_data.empty:
+            if km != 0:
+                print("The parameter kilometer_source is GPS thus the variable km=", km, " is not considered")
             km = round(self.raw_data["km"].iloc[-1] +
                        distance(self.raw_data[["lat", "lon"]].iloc[-1].values, [lat, lon]), 2)
 
         """which country is the vehicle"""
         rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
-        country_code = pd.read_csv('data/country_info.csv')
-        current_country = country_code.loc[rg.query([lat, lon])[0]["cc"]]["Country"]
+        country_codes = pd.read_csv('data/country_info.csv', index_col=0, error_bad_lines=False)
+        current_country = country_codes.loc[rg.query([(lat, lon)])[0]["cc"]]["Country"]
 
         insert_stmt = (
             "INSERT INTO trip_data (timestamp, lat, lon, elev, speed, km, current_country, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        if self.execute_query(query=insert_stmt,
+        if not self.execute_query(query=insert_stmt,
                               data=(timestamp, lat, lon, elev, speed, km, current_country, current_step)):
             print(f"Values '{timestamp, lat, lon, elev, speed, km, current_country, current_step}' failed to be committed")
 
@@ -200,15 +202,13 @@ class OverviewDatabase:
             last_step = steps["current_step"].iloc[-1]
         return last_step
 
-    def query_raw_database(self, force_update=False):
+    def query_raw_database(self):
         """
         Query the raw database and store it into a Pandas Dataframe
-        :param force_update: forces the update of the dataframe even though the self.raw_data is not empty
         :return: nothing but the object now store the raw_data
         """
         if self.database:
-            if force_update or not self.raw_data:
-                self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
+            self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
 
     def wrap_to_geojson(x):
         line = geojson.LineString((x["lat"], x["lon"]))
