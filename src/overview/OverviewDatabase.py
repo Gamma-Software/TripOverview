@@ -38,12 +38,13 @@ class OverviewDatabase:
     database = None
     raw_data = None
     geojsondata = None
+    kilometer_source = "GPS" # Could be GPS (default) or ODO
 
-
-    def __init__(self):
+    def __init__(self, kilometer_source="GPS"):
         """ Initiation """
         self.raw_data = None
         self.geojsondata = None
+        self.kilometer_source = kilometer_source
 
     def connect_to_database(self, db_filepath, create=False):
         """ create a database connection to a SQLite database """
@@ -59,17 +60,20 @@ class OverviewDatabase:
             print(e)
 
         # Create the table is it does not exist
-        create_users_table = """
-        CREATE TABLE IF NOT EXISTS trip_geo (
-          timestamp INTEGER TIMESTAMP,
-          lat FLOAT LATITUDE,
-          lon FLOAT LONGITUDE,
-          elev FLOAT ELEVATION,
-          speed FLOAT SPEED,
-          current_step INT CURRENT_STEP
+        create_trip_table = """
+        CREATE TABLE IF NOT EXISTS trip_data(
+            timestamp INTEGER NOT NULL,
+            lat NUMERIC (5, 2) NOT NULL CHECK (lat>= -90.0 AND lat<= 90.0),
+            lon NUMERIC (5, 2) NOT NULL CHECK (lon>= -180.0 AND lon<= 180.0),
+            elev NUMERIC(7, 2) NOT NULL,
+            speed NUMERIC(6, 2) NOT NULL,
+            km INTEGER NOT NULL CHECK (km>= 0.0),
+            current_country TEXT NOT NULL,
+            current_step INTEGER NOT NULL CHECK (current_step>= 0),
+            PRIMARY KEY(timestamp)
         );
         """
-        self.execute_query(query=create_users_table, create=create)
+        self.execute_query(query=create_trip_table, create=create)
 
     def close_database(self):
         """ Closes the database """
@@ -94,7 +98,7 @@ class OverviewDatabase:
                     cursor.execute(query)
                 self.database.commit()
                 success = True
-                print(f"Query '{query}' executed successfully")
+                print(f"Query '{query}' executed successfully to enter those data:", data)
             except Error as e:
                 print(f"The error '{e}' occurred")
         return success
@@ -118,13 +122,40 @@ class OverviewDatabase:
                 print(f"The error '{e}' occurred")
         return success, result
 
-    def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
+    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=0, current_step=-1):
+        """
+        Commit position
+        :param timestamp:
+        :param lat: gps latitude
+        :param lon: gps longitude
+        :param elev: elevation in meters
+        :param speed: speed of the vehicle
+        :param km: kilometer traveled
+        :param current_step: current step
+        :return:
+        """
+        self.query_raw_database()
+
+        """compute km"""
+        # If the kilometer source is with the GPS delta positions
+        if self.kilometer_source == "GPS" and not self.raw_data.empty:
+            if km != 0:
+                print("The parameter kilometer_source is GPS thus the variable km=", km, " is not considered")
+            km = round(self.raw_data["km"].iloc[-1] +
+                       distance(self.raw_data[["lat", "lon"]].iloc[-1].values, [lat, lon]), 2)
+
+        """which country is the vehicle"""
+        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
+        country_codes = pd.read_csv('data/country_info.csv', index_col=0, error_bad_lines=False)
+        current_country = country_codes.loc[rg.query([(lat, lon)])[0]["cc"]]["Country"]
+
         insert_stmt = (
-            "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
-            "VALUES (?, ?, ?, ?, ?, ?)"
+            "INSERT INTO trip_data (timestamp, lat, lon, elev, speed, km, current_country, current_step) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
-            print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
+        if not self.execute_query(query=insert_stmt,
+                              data=(timestamp, lat, lon, elev, speed, km, current_country, current_step)):
+            print(f"Values '{timestamp, lat, lon, elev, speed, km, current_country, current_step}' failed to be committed")
 
     def describe_trip(self):
         """
@@ -145,20 +176,11 @@ class OverviewDatabase:
         total_duration = (data_copy['date'].iloc[-1] - data_copy['date'].iloc[0]).days
 
         """Compute the total km traveled"""
-        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
-        for i in range(1, len(data_copy[["lat", "lon"]])):
-            total_km_traveled += distance(data_copy[["lat", "lon"]].iloc[i - 1].values,
-                                          data_copy[["lat", "lon"]].iloc[i].values)
-            # Every X km check if the car as changed of
-            print(rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values]))
-            data_copy['country'] = rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values])[0]["cc"]
-            print(data_copy['country'])
-
-        total_km_traveled = round(total_km_traveled, 2)
+        total_km_traveled = data_copy["km"].iloc[-1]
 
         """Compute the number of country traveled"""
         for i in range(1, len(data_copy[["lat", "lon"]])):
-            country_traveled = len(data_copy.drop_duplicates(subset=["country"])["country"])
+            country_traveled = len(data_copy.drop_duplicates(subset=["current_country"])["current_country"])
 
         return (total_duration, country_traveled, total_km_traveled,
                 f"The current trip lasted {total_duration} days,"
@@ -173,8 +195,6 @@ class OverviewDatabase:
         # Copy current step raw data
         # TODO avoid copying the entire dataframe
         steps = self.raw_data.copy()
-        # Filter out the -1 steps
-        steps = steps[steps.current_step != -1]
 
         last_step = 0
         if len(steps) > 0:
@@ -182,15 +202,13 @@ class OverviewDatabase:
             last_step = steps["current_step"].iloc[-1]
         return last_step
 
-    def query_raw_database(self, force_update=False):
+    def query_raw_database(self):
         """
         Query the raw database and store it into a Pandas Dataframe
-        :param force_update: forces the update of the dataframe even though the self.raw_data is not empty
         :return: nothing but the object now store the raw_data
         """
         if self.database:
-            if force_update or not self.raw_data:
-                self.raw_data = pd.read_sql_query('''SELECT * from trip_geo''', self.database)
+            self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
 
     def wrap_to_geojson(x):
         line = geojson.LineString((x["lat"], x["lon"]))
