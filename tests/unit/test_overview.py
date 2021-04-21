@@ -111,13 +111,13 @@ class TestOverviewDatabase(TestCase):
 
     def test_commit(self):
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "create_describe.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "create_describe.db"), True)
         timestamp_geo_json.commit_position(1, 49.0659719561271, 1.99154344325376, 10, 30, 10, 0)
         timestamp_geo_json.commit_position(1000000, 49.0694584269596, 2.0623537554957, 10, 30, 11, 1)
         describe = timestamp_geo_json.describe_trip()
         timestamp_geo_json.close_database()
-        self.assertEqual(describe, (11, 1, 10,
-                                    "The current trip lasted 11 days, 1 country traveled for a total of 11 km"))
+        self.assertEqual(describe, (11, 1, 15.17,
+                                    "The current trip lasted 11 days, 1 country traveled for a total of 15.17 km"))
 
         # Remove test.db generated if exists
         if os.path.exists(os.path.join(self.unit_test_data_folder, "create_describe.db")):
