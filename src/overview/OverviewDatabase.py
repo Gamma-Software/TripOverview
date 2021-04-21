@@ -59,17 +59,20 @@ class OverviewDatabase:
             print(e)
 
         # Create the table is it does not exist
-        create_users_table = """
-        CREATE TABLE IF NOT EXISTS trip_geo (
-          timestamp INTEGER TIMESTAMP,
-          lat FLOAT LATITUDE,
-          lon FLOAT LONGITUDE,
-          elev FLOAT ELEVATION,
-          speed FLOAT SPEED,
-          current_step INT CURRENT_STEP
+        create_trip_table = """
+        CREATE TABLE IF NOT EXISTS trip_data(
+            timestamp INTEGER NOT NULL,
+            lat NUMERIC (5, 2) NOT NULL CHECK (lat>= -90.0 AND lat<= 90.0),
+            lon NUMERIC (5, 2) NOT NULL CHECK (lon>= -180.0 AND lon<= 180.0),
+            elev NUMERIC(7, 2) NOT NULL,
+            speed NUMERIC(6, 2) NOT NULL,
+            km INTEGER NOT NULL CHECK (km>= 0.0),
+            current_country TEXT NOT NULL,
+            current_step INTEGER NOT NULL CHECK (current_step>= 0),
+            PRIMARY KEY(timestamp)
         );
         """
-        self.execute_query(query=create_users_table, create=create)
+        self.execute_query(query=create_trip_table, create=create)
 
     def close_database(self):
         """ Closes the database """
@@ -120,7 +123,7 @@ class OverviewDatabase:
 
     def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
         insert_stmt = (
-            "INSERT INTO trip_geo (timestamp, lat, lon, elev, speed, current_step) "
+            "INSERT INTO trip_data (timestamp, lat, lon, elev, speed, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?)"
         )
         if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
@@ -150,9 +153,7 @@ class OverviewDatabase:
             total_km_traveled += distance(data_copy[["lat", "lon"]].iloc[i - 1].values,
                                           data_copy[["lat", "lon"]].iloc[i].values)
             # Every X km check if the car as changed of
-            print(rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values]))
             data_copy['country'] = rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values])[0]["cc"]
-            print(data_copy['country'])
 
         total_km_traveled = round(total_km_traveled, 2)
 
@@ -173,8 +174,6 @@ class OverviewDatabase:
         # Copy current step raw data
         # TODO avoid copying the entire dataframe
         steps = self.raw_data.copy()
-        # Filter out the -1 steps
-        steps = steps[steps.current_step != -1]
 
         last_step = 0
         if len(steps) > 0:
@@ -190,7 +189,7 @@ class OverviewDatabase:
         """
         if self.database:
             if force_update or not self.raw_data:
-                self.raw_data = pd.read_sql_query('''SELECT * from trip_geo''', self.database)
+                self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
 
     def wrap_to_geojson(x):
         line = geojson.LineString((x["lat"], x["lon"]))
