@@ -38,12 +38,13 @@ class OverviewDatabase:
     database = None
     raw_data = None
     geojsondata = None
+    kilometer_source = "GPS" # Could be GPS (default) or ODO
 
-
-    def __init__(self):
+    def __init__(self, kilometer_source="GPS"):
         """ Initiation """
         self.raw_data = None
         self.geojsondata = None
+        self.kilometer_source = kilometer_source
 
     def connect_to_database(self, db_filepath, create=False):
         """ create a database connection to a SQLite database """
@@ -121,13 +122,38 @@ class OverviewDatabase:
                 print(f"The error '{e}' occurred")
         return success, result
 
-    def commit_position(self, timestamp, lat, lon, elev, speed, current_step=-1):
+    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=-1, current_step=-1):
+        """
+        Commit position
+        :param timestamp:
+        :param lat: gps latitude
+        :param lon: gps longitude
+        :param elev: elevation in meters
+        :param speed: speed of the vehicle
+        :param km: kilometer traveled
+        :param current_step: current step
+        :return:
+        """
+        self.query_raw_database()
+
+        """compute km"""
+        # If the kilometer source is with the GPS delta positions
+        if self.kilometer_source == "GPS":
+            km = round(self.raw_data["km"].iloc[-1] +
+                       distance(self.raw_data[["lat", "lon"]].iloc[-1].values, [lat, lon]), 2)
+
+        """which country is the vehicle"""
+        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
+        country_code = pd.read_csv('data/country_info.csv')
+        current_country = country_code.loc[rg.query([lat, lon])[0]["cc"]]["Country"]
+
         insert_stmt = (
-            "INSERT INTO trip_data (timestamp, lat, lon, elev, speed, current_step) "
-            "VALUES (?, ?, ?, ?, ?, ?)"
+            "INSERT INTO trip_data (timestamp, lat, lon, elev, speed, km, current_country, current_step) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        if self.execute_query(query=insert_stmt, data=(timestamp, lat, lon, elev, speed, current_step)):
-            print(f"Values '{timestamp, lat, lon, elev, speed, current_step}' failed to be committed")
+        if self.execute_query(query=insert_stmt,
+                              data=(timestamp, lat, lon, elev, speed, km, current_country, current_step)):
+            print(f"Values '{timestamp, lat, lon, elev, speed, km, current_country, current_step}' failed to be committed")
 
     def describe_trip(self):
         """
@@ -148,18 +174,11 @@ class OverviewDatabase:
         total_duration = (data_copy['date'].iloc[-1] - data_copy['date'].iloc[0]).days
 
         """Compute the total km traveled"""
-        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
-        for i in range(1, len(data_copy[["lat", "lon"]])):
-            total_km_traveled += distance(data_copy[["lat", "lon"]].iloc[i - 1].values,
-                                          data_copy[["lat", "lon"]].iloc[i].values)
-            # Every X km check if the car as changed of
-            data_copy['country'] = rg.query([data_copy[["lat", "lon"]].iloc[i - 1].values])[0]["cc"]
-
-        total_km_traveled = round(total_km_traveled, 2)
+        total_km_traveled = data_copy["km"].iloc[-1]
 
         """Compute the number of country traveled"""
         for i in range(1, len(data_copy[["lat", "lon"]])):
-            country_traveled = len(data_copy.drop_duplicates(subset=["country"])["country"])
+            country_traveled = len(data_copy.drop_duplicates(subset=["current_country"])["current_country"])
 
         return (total_duration, country_traveled, total_km_traveled,
                 f"The current trip lasted {total_duration} days,"
