@@ -10,47 +10,46 @@ class TestOverviewDatabase(TestCase):
     def test_connect_to_database_not_exist(self):
         # Database does not exist
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_database.db"))
         self.assertEqual(timestamp_geo_json.database is None, True)
         timestamp_geo_json.close_database()
 
         # Database does not exist
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"), False)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_database.db"), False)
         self.assertEqual(timestamp_geo_json.database is None, True)
         timestamp_geo_json.close_database()
 
         # Database does not exist let it create
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "test.db"), True)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "create_database.db"), True)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         # Remove test.db generated if exists
-        if os.path.exists(os.path.join(self.unit_test_data_folder, "test.db")):
-            os.remove(os.path.join(self.unit_test_data_folder, "test.db"))
+        if os.path.exists(os.path.join(self.unit_test_data_folder, "create_database.db")):
+            os.remove(os.path.join(self.unit_test_data_folder, "create_database.db"))
 
     def test_connect_to_database_exist(self):
         timestamp_geo_json = OverviewDatabase()
-        print(os.getcwd())
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"), True)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "database_exists.db"), True)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "database_exists.db"))
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"), False)
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "database_exists.db"), False)
         self.assertEqual(timestamp_geo_json.database is None, False)
         timestamp_geo_json.close_database()
 
     def test_sleeping_position_safeguard(self):
         # Test safeguards
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "sleeping_positions.db"))
         sleeping_position = timestamp_geo_json.get_sleeping_locations(static_position_threshold=-1.0,
                                                                       min_distance=10000.0)
         self.assertEqual(sleeping_position, None)
@@ -67,34 +66,25 @@ class TestOverviewDatabase(TestCase):
     def test_sleeping_position_algo(self):
         # Test the algorithm (arr_to_compare was previously computed and retrieve from known database)
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "pythonsqlite.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "sleeping_positions.db"))
         sleeping_position = timestamp_geo_json.get_sleeping_locations(static_position_threshold=1.0,
                                                                       min_distance=10000.0)
-        arr_to_compare = [[1618820065.0, -49.78690939348198, -3.805875048742564, -84.47370043631621],
-                          [1618936065.0, 37.13415931996609, 179.00562167415478, 412.7214569389232],
-                          [1618994065.0, -9.83469485563809, -35.75825919803481, 688.4604363848367],
-                          [1619200065.0, 49.10854041902809, -144.70545444081387, -40.65572220233265],
-                          [1619258065.0, -59.176027937074196, 112.0352349203165, 570.6795476207768],
-                          [1619544065.0, -75.03506256640486, 57.78561399733644, 860.1709928073229],
-                          [1619734065.0, 73.85356360901267, 113.16560472344452, 787.4086088312232],
-                          [1619746065.0, -30.011845773073645, -150.48487842130208, 1549.7752073372694],
-                          [1620140065.0, 28.19190068663478, 117.92338615287599, 1428.013416142928],
-                          [1620256065.0, -43.17996948492938, -28.40686355209135, 999.2290435846639],
-                          [1620394065.0, 39.67410695295811, 30.809351967524776, 862.7258185399526],
-                          [1620512065.0, -68.90706422529061, -70.42216768231695, 1674.466900226373],
-                          [1620742065.0, 78.29148861767439, -108.94832646361277, 599.0045583237422],
-                          [1620850065.0, -79.52130256523658, 156.81823342705684, 1450.9797053383274],
-                          [1621032065.0, 19.921294159216274, 162.47794400338074, 1686.3926625304277],
-                          [1621206065.0, -65.61426592379706, 152.7874024853577, 1660.814508914641],
-                          [1621272065.0, 65.56650534378679, -152.20970971831383, 136.54790141266858],
-                          [1621340065.0, -41.466615989799635, 56.24459724742093, 694.8145263082174],
-                          [1621894065.0, 10.723964812681018, -131.71535211282134, 1248.2564223310246],
-                          [1622038065.0, -53.79019529092054, 97.42498161064202, 380.9929525750793],
-                          [1622142065.0, 60.268767375171564, 176.48082179931674, 323.0296889952723],
-                          [1622192065.0, -82.35238665518891, -55.17291712220019, 1915.6455951554658],
-                          [1622294065.0, 32.17682481821515, -124.3467174563323, 67.93160418836774],
-                          [1622432065.0, -14.91340773935437, 42.82529433417446, 223.81945003652766],
-                          [1622746065.0, -27.949979158501407, -142.8203118402694, 863.0530667251164]]
+        arr_to_compare = [[1619634065.0, 49.431277595698134, -20.98148729661071, 1514.1521730711734],
+                             [1621194065.0, -86.1098956684625, 35.234345656375524, 80.3408834444651],
+                             [1621834065.0, -42.826527934121025, -79.58012428574254, 1618.3108108719073],
+                             [1621994065.0, -7.954232329795332, 35.788277401957856, 1883.3508097831768],
+                             [1625414065.0, -84.90846986361606, 127.82413463655297, 1961.8996930060061],
+                             [1627274065.0, 54.224022710287215, 41.515787809682706, 1578.9008688644137],
+                             [1627354065.0, -75.42843316666324, 170.47262816944078, 1940.6388351476155],
+                             [1629694065.0, 38.53138915290043, -156.4687100166362, 598.0491877891006],
+                             [1630174065.0, -82.73484030998364, 142.85054919092374, 637.8919991016945],
+                             [1630954065.0, 72.87019994033659, 162.48060405168206, 602.1519613980629],
+                             [1632654065.0, -60.83675755429996, 10.412778726866492, 439.6424213817743],
+                             [1633014065.0, -44.367148322343496, 172.85962955561644, 1974.9541260630958],
+                             [1633434065.0, 53.71556212499095, 156.31537796737825, 496.5989531307573],
+                             [1633614065.0, -54.71120904181415, 18.816344922429494, 1559.9148077377374],
+                             [1634294065.0, 55.29434787181489, -65.96615858183169, 798.7524857699054],
+                             [1638554065.0, -76.65452037125489, -30.04423329175023, 970.5383400465591]]
         self.assertEqual(sleeping_position.values.tolist(), arr_to_compare)
         timestamp_geo_json.close_database()
 
@@ -106,31 +96,18 @@ class TestOverviewDatabase(TestCase):
         self.assertEqual(last_step, 0)
 
         timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "last_step.db"))
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "with_last_step.db"))
         last_step = timestamp_geo_json.get_last_step()
         timestamp_geo_json.close_database()
-        self.assertEqual(last_step, 1)
-
-    def test_last_step(self):
-        timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "no_last_step.db"))
-        last_step = timestamp_geo_json.get_last_step()
-        timestamp_geo_json.close_database()
-        self.assertEqual(last_step, 0)
-
-        timestamp_geo_json = OverviewDatabase()
-        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "last_step.db"))
-        last_step = timestamp_geo_json.get_last_step()
-        timestamp_geo_json.close_database()
-        self.assertEqual(last_step, 1)
+        self.assertEqual(last_step, 2)
 
     def test_describe_trip(self):
         timestamp_geo_json = OverviewDatabase()
         timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "describe.db"))
         describe = timestamp_geo_json.describe_trip()
         timestamp_geo_json.close_database()
-        self.assertEqual(describe, (12, 1, 0.15,
-                                    "The current trip lasted 12 days, 1 country traveled for a total of 0.15 km"))
+        self.assertEqual(describe, (11, 1, 5.17,
+                                    "The current trip lasted 11 days, 1 country traveled for a total of 5.17 km"))
 
 
 if __name__ == '__main__':
