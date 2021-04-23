@@ -1,11 +1,20 @@
 #!/usr/bin/python3
+import yaml
 import argparse
 import typing
 import sys
+import os
+import platform
+from shutil import copyfile
+from src.overview.OverviewDatabase import OverviewDatabase
+
+timestamp_geo_json = OverviewDatabase()
+path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
+path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
 
 
-def save_gps_position(gps_position):
-    print("save_position")
+def save_gps_position(timestamp, lat, lon, elev, speed, km):
+    timestamp_geo_json.commit_position(timestamp, lat, lon, elev, speed, km)
 
 
 def create_site():
@@ -68,6 +77,11 @@ def parse_args(cmd_args: typing.Sequence[str]):
 
 
 def main_args(cmd_args: typing.Sequence[str]):
+    # load configuration #TODO linux style -> adapt path to win
+    with open(path_to_conf) as file:
+        configuration = yaml.load(file, Loader=yaml.FullLoader)
+
+    timestamp_geo_json.connect_to_database("file")
     args = parse_args(cmd_args)
     sys.exit(args.func(args))
 
