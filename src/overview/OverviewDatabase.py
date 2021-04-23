@@ -259,7 +259,7 @@ class OverviewDatabase:
                                                              sleeping_df[["lat", "lon"]].iloc[i].values)
         # Filter positions that distance is sufficient
         sleeping_df = sleeping_df[sleeping_df.dist_from_last >= min_distance]
-        return sleeping_df[["timestamp", "lat", "lon", "elev"]]
+        return sleeping_df[["timestamp", "lat", "lon", "elev"]].copy()
 
 
 #timestamp_geo_json = OverviewDatabase()
