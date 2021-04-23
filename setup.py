@@ -18,13 +18,21 @@ def get_dependencies():
 
 
 def _post_install():
-    src = os.path.join(os.getcwd(), "/data/default_configuration.yaml")
-    dst = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
+    print("Configuring Trip Overview app...")
+    path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
+    path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
     if platform.system() == "Windows":
+        src = os.path.join(os.getcwd(), "/data/default_configuration.yaml")
+        path_to_conf = path_to_conf_linux
+    else:
         src = os.path.join(os.getcwd(), r"\data\default_configuration.yaml")
-        dst = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
-    print("Add TripOverview default, ", src,  " configuration to ", dst)
-    copyfile(src, dst)
+        path_to_conf = path_to_conf_win
+    if not os.path.exists(path_to_conf):
+        print("The default configuration file is not installed")
+        print("Add TripOverview default, ", src, " configuration to ", path_to_conf)
+        copyfile(src, path_to_conf)
+    else:
+        print("TripOverview configuration file already installed")
 
 
 class NewInstall(install):
