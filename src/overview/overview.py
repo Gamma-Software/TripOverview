@@ -12,10 +12,6 @@ def create_site():
     print("create site")
 
 
-def main():
-    print("main")
-
-
 def manual():
     print("Create a map in html, save gps position")
 
@@ -41,6 +37,10 @@ def parse_args(cmd_args: typing.Sequence[str]):
     return parser.parse_args(args=cmd_args)
 
 
-if __name__ == '__main__':
-    args = parse_args(sys.argv[1:])
+def main_args(cmd_args: typing.Sequence[str]):
+    args = parse_args(cmd_args)
     sys.exit(args.func(args))
+
+
+def main():
+    main_args(sys.argv[1:])
