@@ -1,0 +1,2 @@
+kilometer_source: "GPS"
+database_filepath: "/.trip_overview/trip_database.db"

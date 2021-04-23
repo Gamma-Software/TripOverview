@@ -1,5 +1,9 @@
 import setuptools
-from pathlib import Path
+import atexit
+import os
+import platform
+from shutil import copyfile
+from setuptools.command.install import install
 
 ignored_dependencies = []
 
@@ -11,6 +15,22 @@ def get_dependencies():
         map(lambda r: r.strip(), requirements)
         requirements = [r for r in requirements if r not in ignored_dependencies]
         return requirements
+
+
+def _post_install():
+    src = os.path.join(os.getcwd(), "/data/default_configuration.yaml")
+    dst = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
+    if platform.system() == "Windows":
+        src = os.path.join(os.getcwd(), r"\data\default_configuration.yaml")
+        dst = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
+    print("Add TripOverview default, ", src,  " configuration to ", dst)
+    copyfile(src, dst)
+
+
+class NewInstall(install):
+    def __init__(self, *args, **kwargs):
+        super(NewInstall, self).__init__(*args, **kwargs)
+        atexit.register(_post_install)
 
 
 with open("README.md", "r") as fh:
@@ -41,5 +61,6 @@ setuptools.setup(
     project_urls={
         "Site prototype": "https://gamma-software.github.io/",
         "Source Code": "https://github.com/Gamma-Software/TripOverview",
-    }
+    },
+    cmdclass={'install': NewInstall},
 )
