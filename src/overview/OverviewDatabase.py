@@ -214,6 +214,22 @@ class OverviewDatabase:
         if self.database:
             self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
 
+    def get_road_trip_gps_trace(self, speed_sampling=5, max_sampling=1, seperated_by_steps=False):
+        """
+        Get the GPS trace
+        :param speed_sampling:
+        :param max_sampling:
+        :param seperated_by_steps:
+        :return:
+        """
+        # Retrieve raw position
+        self.query_raw_database()
+        # Copy current step raw data
+        # TODO avoid copying the entire dataframe
+        gps_trace = self.raw_data.copy()
+        # TODO algo + test
+        return gps_trace
+
     def wrap_to_geojson(x):
         line = geojson.LineString((x["lat"], x["lon"]))
         properties = {'times': x["timestamp"],
