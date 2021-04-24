@@ -214,12 +214,11 @@ class OverviewDatabase:
         if self.database:
             self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
 
-    def get_road_trip_gps_trace(self, speed_sampling=5, max_sampling=1, seperated_by_steps=False):
+    def get_road_trip_gps_trace(self, speed_sampling=5, max_sampling=1):
         """
         Get the GPS trace
         :param speed_sampling:
         :param max_sampling:
-        :param seperated_by_steps:
         :return:
         """
         # Retrieve raw position
