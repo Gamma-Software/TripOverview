@@ -43,14 +43,24 @@ def configure():
         conf = yaml.load(file, Loader=yaml.FullLoader)
         print("Current configuration:", conf)
 
+    print("Write nothing and press enter to keep current configuration")
     print("configure kilometer_source:")
-    conf["kilometer_source"] = input("available configuration [\"GPS\" or \"ODO\"]:")
+    choice = input("available configuration [\"GPS\" or \"ODO\"]:")
+    conf["kilometer_source"] = choice if not "" else conf["kilometer_source"]
     print("configure database_filepath:")
-    conf["database_filepath"] = input("")
+    choice = input("")
+    conf["database_filepath"] = choice if not "" else conf["database_filepath"]
+    print("configure folium_site_output_path:")
+    choice = input("")
+    conf["folium_site_output_path"] = choice if not "" else conf["folium_site_output_path"]
+    print("configure folium_site_output_filename (without html extension):")
+    choice = input("")
+    conf["folium_site_output_filename"] = choice if not "" else conf["folium_site_output_filename"]
 
     with open(path_to_conf, 'w') as file:
         documents = yaml.dump(conf, file)
         print("Write ", conf, " in ", path_to_conf)
+
 
 def parse_args(cmd_args: typing.Sequence[str]):
     parser = argparse.ArgumentParser(prog='overview')

@@ -1,2 +1,4 @@
 kilometer_source: "GPS"
 database_filepath: "/home/valentinrudloff/.trip_overview/trip_database.db"
+folium_site_output_path: "."
+folium_site_output_filename: "trip_overview"
