@@ -8,9 +8,10 @@ import platform
 from shutil import copyfile
 from src.overview.OverviewDatabase import OverviewDatabase
 
-timestamp_geo_json = OverviewDatabase()
+trip_data = OverviewDatabase()
 path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
 path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
+configuration = dict()
 
 
 def save_gps_position(timestamp, lat, lon, elev, speed, km):
