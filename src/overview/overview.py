@@ -87,11 +87,11 @@ def parse_args(cmd_args: typing.Sequence[str]):
 
 
 def main_args(cmd_args: typing.Sequence[str]):
-    # load configuration #TODO linux style -> adapt path to win
-    with open(path_to_conf) as file:
+    # load configuration
+    with open(path_to_conf_linux if platform.system() == "Windows" else path_to_conf_win) as file:
         configuration = yaml.load(file, Loader=yaml.FullLoader)
+    trip_data.connect_to_database(configuration["database_filepath"])
 
-    timestamp_geo_json.connect_to_database("file")
     args = parse_args(cmd_args)
     sys.exit(args.func(args))
 
