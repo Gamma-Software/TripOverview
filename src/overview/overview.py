@@ -30,6 +30,7 @@ def create_site():
     whole_trip_trace = gps_trace[["lat", "lon"]]
     map_to_plot = folium.Map(gps_trace[-1], zoom_start=10)
 
+    # TODO Handle case where the sub step trace length is not > 1
     folium.plugins.AntPath(
         locations=whole_trip_trace,
         dash_array=[10, 15],
