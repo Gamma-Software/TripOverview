@@ -12,7 +12,7 @@ TODO
 
 ## Details
 ### Programming Language
-This project is written in python and is meant to be run on a device that supports GPS queries.
+This project is written in python and is meant to be run on a device that supports GPS queries.
 
 ### Integration
 TODO
@@ -29,6 +29,7 @@ TODO
   - Dynamically see the progression
   - Add the company logo
   - Photos/Timelapse taken during the road trip
+- Display a pre-programmed road trip (from GPX, KML)
 - Use https://openmaptiles.org/docs/ to create an offline map server and download the map tiles in https://data.maptiler.com/downloads/planet/
 
 ## Contribute
