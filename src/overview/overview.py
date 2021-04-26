@@ -25,10 +25,10 @@ def save_gps_position(timestamp, lat, lon, elev, speed, km):
 
 
 def create_site():
-    center = (45.0, 2.0)
     gps_trace = trip_data.get_road_trip_gps_trace()
+    center_of_map = gps_trace[-1]
     whole_trip_trace = gps_trace[["lat", "lon"]]
-    map_to_plot = folium.Map(gps_trace[-1], zoom_start=10)
+    map_to_plot = folium.Map(center_of_map, zoom_start=10)
 
     # TODO Handle case where the sub step trace length is not > 1
     for current_step_trace_idx in range(gps_trace.current_step.iloc[-1].value):
@@ -41,8 +41,8 @@ def create_site():
             gif = "test.gif" # TODO
             tooltip_html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p><img src={gif}>'\
                 .format(date=distance_traveled_in_step,
-                        distance=current_step_trace_idx,
-                        km=distance_traveled_in_step,
+                        step=current_step_trace_idx,
+                        distance=distance_traveled_in_step,
                         gif=gif)
             folium.plugins.AntPath(
                 locations=current_step_trace,
@@ -69,6 +69,7 @@ def create_site():
 
     kw = {"prefix": "fa", "color": "green", "icon": "camera"}
     # Create photos marker
+    # TODO get from instagram
     for i in range(0, len(whole_trip_trace), 200):
         encoded = base64.b64encode(open("moon.jpg", 'rb').read())
         html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p><p><img src="data:image/jpeg;base64,{}"></p>'.format
@@ -79,7 +80,10 @@ def create_site():
     kw = {"prefix": "fa", "color": "blue", "icon": "bed"}
     # Create sleep steps
     sleep_steps = trip_data.get_sleeping_locations()
-    for i in range(0, len(whole_trip_trace), 2000):
+    for i in range(len(sleep_steps)):
+        date = sleep_steps.date.iloc[i].day
+        step = sleep_steps.current_step.iloc[i].value
+        
         html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p>'.format(
             sleep_steps.lat.iloc[i].value, sleep_steps.lon.iloc[i].value)
         icon = folium.Icon(**kw)
