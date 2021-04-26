@@ -228,7 +228,7 @@ class OverviewDatabase:
         # TODO avoid copying the entire dataframe
         gps_trace = self.raw_data.copy()
         # Change timestamp to datetime
-        gps_trace['timestamp'] = pd.to_datetime(gps_trace['timestamp'], unit='s')
+        gps_trace['date'] = pd.to_datetime(gps_trace['timestamp'], unit='s')
         # Resample by time and interpolate linearly TODO technical debt resample by time
         # gps_trace.resample(str(max_time_sampling)+"S", on="timestamp").mean()
         # Remove the current index (the default one)
