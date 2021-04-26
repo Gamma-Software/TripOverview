@@ -31,18 +31,30 @@ def create_site():
     map_to_plot = folium.Map(gps_trace[-1], zoom_start=10)
 
     # TODO Handle case where the sub step trace length is not > 1
-    folium.plugins.AntPath(
-        locations=whole_trip_trace,
-        dash_array=[10, 15],
-        delay=800,
-        weight=6,
-        color="#F6FFF3",
-        pulse_color="#000000",
-        paused=False,
-        reverse=False,
-        tooltip='<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><img src="road.gif">'
-    ).add_to(map_to_plot)
-    map_to_plot.fit_bounds(map_to_plot.get_bounds())
+    for current_step_trace_idx in range(gps_trace.current_step.iloc[-1].value):
+        current_step_trace = gps_trace.loc[current_step_trace_idx]
+        if len(current_step_trace) > 1:
+            distance_traveled_in_step = 0
+            for km_idx in range(1, len(current_step_trace["km"])):
+                distance_traveled_in_step += current_step_trace["km"][km_idx] - current_step_trace["km"][km_idx - 1]
+            date = current_step_trace["date"][0].day
+            gif = "test.gif" # TODO
+            tooltip_html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p><img src={gif}>'\
+                .format(date=distance_traveled_in_step,
+                        distance=current_step_trace_idx,
+                        km=distance_traveled_in_step,
+                        gif=gif)
+            folium.plugins.AntPath(
+                locations=current_step_trace,
+                dash_array=[10, 15],
+                delay=800,
+                weight=6,
+                color="#F6FFF3",
+                pulse_color="#000000",
+                paused=False,
+                reverse=False,
+                tooltip=tooltip_html
+            ).add_to(map_to_plot)
 
     marker_cluster = folium.plugins.MarkerCluster(name='Photos during the trip').add_to(map_to_plot)
     marker_cluster_steps = folium.FeatureGroup(name="Etapes du voyage").add_to(map_to_plot)
@@ -117,6 +129,10 @@ def create_site():
         title_cancel="Annuler",
         force_separate_button=True,
     ).add_to(map_to_plot)
+
+    # Limit bounds
+    map_to_plot.fit_bounds(map_to_plot.get_bounds())
+
     map_to_plot.save(configuration["database_filepath"] + configuration["folium_site_output_filename"] + ".html")
 
 
