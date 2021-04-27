@@ -71,21 +71,28 @@ def create_site():
     # Create photos marker
     # TODO get from instagram
     for i in range(0, len(whole_trip_trace), 200):
-        encoded = base64.b64encode(open("moon.jpg", 'rb').read())
-        html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p><p><img src="data:image/jpeg;base64,{}"></p>'.format
+        html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p>' \
+               '<p>Coordonnée GPS: {lat}, {lon}</p><p><img src="data:image/jpeg;base64,{image}"></p>'.format(
+            date="10 dec",
+            step=10,
+            distance=10,
+            lat=10,
+            lon=10,
+            image=base64.b64encode(open("moon.jpg", 'rb').read()).decode('UTF-8')
+        )
         icon = folium.Icon(**kw)
-        folium.Marker(location=whole_trip_trace[i], icon=icon, tooltip=html(whole_trip_trace[i],
-                                                            encoded.decode('UTF-8'))).add_to(marker_cluster)
+        folium.Marker(location=whole_trip_trace[i], icon=icon, tooltip=html).add_to(marker_cluster)
 
     kw = {"prefix": "fa", "color": "blue", "icon": "bed"}
     # Create sleep steps
     sleep_steps = trip_data.get_sleeping_locations()
     for i in range(len(sleep_steps)):
-        date = sleep_steps.date.iloc[i].day
-        step = sleep_steps.current_step.iloc[i].value
-        
-        html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p>'.format(
-            sleep_steps.lat.iloc[i].value, sleep_steps.lon.iloc[i].value)
+        html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p>' \
+               '<p>Coordonnée GPS: {lat}, {lon}</p>'.format(date=sleep_steps.date.iloc[i].day,
+                                                            step=sleep_steps.current_step.iloc[i].value,
+                                                            distance=sleep_steps.km.iloc[i].value,
+                                                            lat=sleep_steps.lat.iloc[i].value,
+                                                            lon=sleep_steps.lon.iloc[i].value)
         icon = folium.Icon(**kw)
         folium.Marker(location=sleep_steps[["lat", "lon"]][i], icon=icon, tooltip=html).add_to(marker_cluster_steps)
 
@@ -100,10 +107,10 @@ def create_site():
         z-index:9999;
         font-size:14px;
         ">
-        <p>Temps de voyage: 54 jours</p>
-        <p>Kilomètre parcourue: 13141 km</p>
-        <p>Pays traversés: 5</p>
-        <p>Date de mise à jour: 10 mars 2021</p>
+        <p>Temps de voyage: {number_day} jours</p>
+        <p>Kilomètre parcourue: {distance} km</p>
+        <p>Pays traversés: {country_passed}</p>
+        <p>Date de mise à jour: {date_site_update}</p>
     </div>
     <div style="
         position: fixed;
@@ -118,7 +125,7 @@ def create_site():
         ">
     </div>
     {% endmacro %}
-    """
+    """.format(number_day=10, distance=10, country_passed=10, date_site_update="10")
 
     legend = branca.element.MacroElement()
     legend._template = branca.element.Template(legend_html)
