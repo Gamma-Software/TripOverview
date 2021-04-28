@@ -214,7 +214,7 @@ def parse_args(cmd_args: typing.Sequence[str]):
 
 def main_args(cmd_args: typing.Sequence[str]):
     # load configuration
-    with open(path_to_conf_linux if platform.system() == "Windows" else path_to_conf_win) as file:
+    with open(path_to_conf_win if platform.system() == "Windows" else path_to_conf_linux) as file:
         configuration = yaml.load(file, Loader=yaml.FullLoader)
     trip_data.connect_to_database(configuration["database_filepath"])
 
