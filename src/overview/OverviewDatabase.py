@@ -24,7 +24,6 @@ def distance(origin, destination):
         * math.cos(math.radians(lat2)) * math.sin(diff_lon/2) * math.sin(diff_lon/2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = radius * c
-
     return d
 
 
@@ -37,8 +36,7 @@ class OverviewDatabase:
     # Database instance
     database = None
     raw_data = None
-    geojsondata = None
-    kilometer_source = "GPS" # Could be GPS (default) or ODO
+    kilometer_source = "GPS"  # Could be GPS (default) or ODO
 
     def __init__(self, kilometer_source="GPS"):
         """ Initiation """
