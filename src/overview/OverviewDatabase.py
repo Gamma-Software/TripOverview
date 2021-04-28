@@ -44,7 +44,6 @@ class OverviewDatabase:
     def __init__(self, kilometer_source="GPS"):
         """ Initiation """
         self.raw_data = None
-        self.geojsondata = None
         self.kilometer_source = kilometer_source
 
     def __del__(self):
@@ -298,9 +297,3 @@ class OverviewDatabase:
         # Filter positions that distance is sufficient
         sleeping_df = sleeping_df[sleeping_df.dist_from_last >= min_distance]
         return sleeping_df[["timestamp", "lat", "lon", "elev"]].copy()
-
-
-#timestamp_geo_json = OverviewDatabase()
-#timestamp_geo_json.connect_to_database("file")
-#timestamp_geo_json.commit_position(1041234, 45.0, 35.5, 1004.0, 10.0)
-#timestamp_geo_json.query_raw_positions()
