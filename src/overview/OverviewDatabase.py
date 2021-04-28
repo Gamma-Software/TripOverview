@@ -46,6 +46,10 @@ class OverviewDatabase:
         self.geojsondata = None
         self.kilometer_source = kilometer_source
 
+    def __del__(self):
+        # Close the database
+        self.close_database()
+
     def connect_to_database(self, db_filepath, create=False):
         """ create a database connection to a SQLite database """
         if not os.path.exists(db_filepath):
