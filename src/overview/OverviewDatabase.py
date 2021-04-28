@@ -9,7 +9,7 @@ import reverse_geocoder
 
 
 def distance(origin, destination):
-    """TODO doc
+    """
     Haversine formula example in Python
     Author: Wayne Dyck
     https://gist.github.com/rochacbruno/2883505
@@ -29,9 +29,12 @@ def distance(origin, destination):
 
 class OverviewDatabase:
     """This class wraps the Folium TimestampGeoJson class to add functions like
-    connecting to a database with simple custom geographic position"""
-    # timestamp_geo_json = TimestampGeoJsonWrapper("file")
-    # timestamp_geo_json.query_positions()
+    connecting to a database with simple custom geographic position.
+    Usage:
+     timestamp_geo_json = TimestampGeoJsonWrapper("file")
+     timestamp_geo_json.query_positions()
+     timestamp_geo_json.commit_position(...)
+     timestamp_geo_json.close_database() (or called at destruction)"""
 
     # Database instance
     database = None
