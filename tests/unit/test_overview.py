@@ -1,5 +1,6 @@
 import os
 import unittest
+import numpy as np
 from unittest import TestCase
 from src.overview.OverviewDatabase import OverviewDatabase
 
@@ -122,6 +123,16 @@ class TestOverviewDatabase(TestCase):
         # Remove test.db generated if exists
         if os.path.exists(os.path.join(self.unit_test_data_folder, "create_describe.db")):
             os.remove(os.path.join(self.unit_test_data_folder, "create_describe.db"))
+
+    def test_gps_trace(self):
+        timestamp_geo_json = OverviewDatabase()
+        timestamp_geo_json.connect_to_database(os.path.join(self.unit_test_data_folder, "gps_trace.db"), True)
+        trace = timestamp_geo_json.get_road_trip_gps_trace(speed_resampling=10)
+        timestamp_geo_json.close_database()
+        self.assertEqual(trace.loc[0]["lat"].values[0] == 46.58568968857452, True)
+        self.assertEqual(trace.loc[0]["lat"].values[1] == -53.46602430039604, True)
+        self.assertEqual(trace.loc[3]["lat"].values[0] == 59.45381512533035, True)
+        self.assertEqual(trace["lat"].values[4] == 59.45381512533035, True)
 
 
 if __name__ == '__main__':

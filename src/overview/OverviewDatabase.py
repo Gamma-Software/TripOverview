@@ -24,7 +24,6 @@ def distance(origin, destination):
         * math.cos(math.radians(lat2)) * math.sin(diff_lon/2) * math.sin(diff_lon/2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = radius * c
-
     return d
 
 
@@ -37,8 +36,7 @@ class OverviewDatabase:
     # Database instance
     database = None
     raw_data = None
-    geojsondata = None
-    kilometer_source = "GPS" # Could be GPS (default) or ODO
+    kilometer_source = "GPS"  # Could be GPS (default) or ODO
 
     def __init__(self, kilometer_source="GPS"):
         """ Initiation """
@@ -213,6 +211,39 @@ class OverviewDatabase:
         """
         if self.database:
             self.raw_data = pd.read_sql_query('''SELECT * from trip_data''', self.database)
+
+    def get_road_trip_gps_trace(self, speed_resampling=5, max_time_sampling=60):
+        """
+        Get the GPS trace with the sub indexed by step
+        :param speed_resampling: resample the data to filter out trace where the vehicle does not move
+        :param max_time_sampling: sample the data to get at most x seconds (60s by default) between traces
+        :return: the road trip gps trace, ex: use dataframe.loc[10] to get the gps trace from the 9th trip step
+        or use sampled[["lat", "lon"]] to get the whole trip gps trace
+        """
+        # Retrieve raw position
+        self.query_raw_database()
+        # Copy current step raw data
+        # TODO avoid copying the entire dataframe
+        gps_trace = self.raw_data.copy()
+        # Change timestamp to datetime
+        gps_trace['date'] = pd.to_datetime(gps_trace['timestamp'], unit='s')
+        # Resample by time and interpolate linearly TODO technical debt resample by time
+        # gps_trace.resample(str(max_time_sampling)+"S", on="timestamp").mean()
+        # Remove the current index (the default one)
+        # Remove trace static traces
+        gps_trace.drop(gps_trace[gps_trace.speed < 10.0].index, inplace=True)
+        gps_trace.reset_index(drop=True, inplace=True)
+        # Interpolate the correct columns
+        gps_trace[["lat", "lon", "elev", "speed", "km"]] = gps_trace[["lat", "lon", "elev", "speed", "km"]].interpolate(
+            method='linear')
+        # Fill forward current_country and current_step
+        gps_trace["current_country"].fillna(method='ffill', inplace=True)
+        gps_trace["current_step"].fillna(method='ffill', inplace=True)
+        # Reset the current_step type
+        gps_trace["current_step"] = gps_trace["current_step"].astype('int64')
+        # Set current_step as index
+        gps_trace = gps_trace.set_index(['current_step'])
+        return gps_trace
 
     def wrap_to_geojson(x):
         line = geojson.LineString((x["lat"], x["lon"]))

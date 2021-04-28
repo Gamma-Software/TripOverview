@@ -25,23 +25,36 @@ def save_gps_position(timestamp, lat, lon, elev, speed, km):
 
 
 def create_site():
-    center = (45.0, 2.0)
     gps_trace = trip_data.get_road_trip_gps_trace()
+    center_of_map = gps_trace[-1]
     whole_trip_trace = gps_trace[["lat", "lon"]]
-    map_to_plot = folium.Map(gps_trace[-1], zoom_start=10)
+    map_to_plot = folium.Map(center_of_map, zoom_start=10)
 
-    folium.plugins.AntPath(
-        locations=whole_trip_trace,
-        dash_array=[10, 15],
-        delay=800,
-        weight=6,
-        color="#F6FFF3",
-        pulse_color="#000000",
-        paused=False,
-        reverse=False,
-        tooltip='<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><img src="road.gif">'
-    ).add_to(map_to_plot)
-    map_to_plot.fit_bounds(map_to_plot.get_bounds())
+    # TODO Handle case where the sub step trace length is not > 1
+    for current_step_trace_idx in range(gps_trace.current_step.iloc[-1].value):
+        current_step_trace = gps_trace.loc[current_step_trace_idx]
+        if len(current_step_trace) > 1:
+            distance_traveled_in_step = 0
+            for km_idx in range(1, len(current_step_trace["km"])):
+                distance_traveled_in_step += current_step_trace["km"][km_idx] - current_step_trace["km"][km_idx - 1]
+            date = current_step_trace["date"][0].day
+            gif = "test.gif" # TODO
+            tooltip_html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p><img src={gif}>'\
+                .format(date=distance_traveled_in_step,
+                        step=current_step_trace_idx,
+                        distance=distance_traveled_in_step,
+                        gif=gif)
+            folium.plugins.AntPath(
+                locations=current_step_trace,
+                dash_array=[10, 15],
+                delay=800,
+                weight=6,
+                color="#F6FFF3",
+                pulse_color="#000000",
+                paused=False,
+                reverse=False,
+                tooltip=tooltip_html
+            ).add_to(map_to_plot)
 
     marker_cluster = folium.plugins.MarkerCluster(name='Photos during the trip').add_to(map_to_plot)
     marker_cluster_steps = folium.FeatureGroup(name="Etapes du voyage").add_to(map_to_plot)
@@ -56,19 +69,30 @@ def create_site():
 
     kw = {"prefix": "fa", "color": "green", "icon": "camera"}
     # Create photos marker
+    # TODO get from instagram
     for i in range(0, len(whole_trip_trace), 200):
-        encoded = base64.b64encode(open("moon.jpg", 'rb').read())
-        html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p><p><img src="data:image/jpeg;base64,{}"></p>'.format
+        html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p>' \
+               '<p>Coordonnée GPS: {lat}, {lon}</p><p><img src="data:image/jpeg;base64,{image}"></p>'.format(
+            date="10 dec",
+            step=10,
+            distance=10,
+            lat=10,
+            lon=10,
+            image=base64.b64encode(open("moon.jpg", 'rb').read()).decode('UTF-8')
+        )
         icon = folium.Icon(**kw)
-        folium.Marker(location=whole_trip_trace[i], icon=icon, tooltip=html(whole_trip_trace[i],
-                                                            encoded.decode('UTF-8'))).add_to(marker_cluster)
+        folium.Marker(location=whole_trip_trace[i], icon=icon, tooltip=html).add_to(marker_cluster)
 
     kw = {"prefix": "fa", "color": "blue", "icon": "bed"}
     # Create sleep steps
     sleep_steps = trip_data.get_sleeping_locations()
-    for i in range(0, len(whole_trip_trace), 2000):
-        html = '<h1>10 Décembre 2021</h1><p>Etape X</p><p>Distance parcourue X km</p><p>Coordonnée GPS: {}, {}</p>'.format(
-            sleep_steps.lat.iloc[i].value, sleep_steps.lon.iloc[i].value)
+    for i in range(len(sleep_steps)):
+        html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p>' \
+               '<p>Coordonnée GPS: {lat}, {lon}</p>'.format(date=sleep_steps.date.iloc[i].day,
+                                                            step=sleep_steps.current_step.iloc[i].value,
+                                                            distance=sleep_steps.km.iloc[i].value,
+                                                            lat=sleep_steps.lat.iloc[i].value,
+                                                            lon=sleep_steps.lon.iloc[i].value)
         icon = folium.Icon(**kw)
         folium.Marker(location=sleep_steps[["lat", "lon"]][i], icon=icon, tooltip=html).add_to(marker_cluster_steps)
 
@@ -83,10 +107,10 @@ def create_site():
         z-index:9999;
         font-size:14px;
         ">
-        <p>Temps de voyage: 54 jours</p>
-        <p>Kilomètre parcourue: 13141 km</p>
-        <p>Pays traversés: 5</p>
-        <p>Date de mise à jour: 10 mars 2021</p>
+        <p>Temps de voyage: {number_day} jours</p>
+        <p>Kilomètre parcourue: {distance} km</p>
+        <p>Pays traversés: {country_passed}</p>
+        <p>Date de mise à jour: {date_site_update}</p>
     </div>
     <div style="
         position: fixed;
@@ -101,7 +125,7 @@ def create_site():
         ">
     </div>
     {% endmacro %}
-    """
+    """.format(number_day=10, distance=10, country_passed=10, date_site_update="10")
 
     legend = branca.element.MacroElement()
     legend._template = branca.element.Template(legend_html)
@@ -116,6 +140,10 @@ def create_site():
         title_cancel="Annuler",
         force_separate_button=True,
     ).add_to(map_to_plot)
+
+    # Limit bounds
+    map_to_plot.fit_bounds(map_to_plot.get_bounds())
+
     map_to_plot.save(configuration["database_filepath"] + configuration["folium_site_output_filename"] + ".html")
 
 
