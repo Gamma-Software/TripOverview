@@ -22,10 +22,10 @@ def _post_install():
     path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
     path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
     if platform.system() == "Windows":
-        src = os.path.join(os.getcwd(), "/data/default_configuration.yaml")
+        src = os.path.join(os.getcwd(), "data/default_configuration.yaml")
         path_to_conf = path_to_conf_linux
     else:
-        src = os.path.join(os.getcwd(), r"\data\default_configuration.yaml")
+        src = os.path.join(os.getcwd(), r"data/default_configuration.yaml")
         path_to_conf = path_to_conf_win
     if not os.path.exists(path_to_conf):
         print("The default configuration file is not installed")
@@ -52,14 +52,14 @@ setuptools.setup(
     url="https://github.com/Gamma-Software/TripOverview",
     entry_points={
         "console_scripts": [
-            "trip_overview=src.overview:main",
+            "trip_overview=src.overview.overview:main",
         ]
     },
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Operating System :: OS Independent",
     ],
-    author="ValentinRudloff",
+    author="Valentin Rudloff",
     author_email="valentin.rudloff.perso@gmail.com",
     python_requires=">=3.6",
     packages=setuptools.find_packages(),

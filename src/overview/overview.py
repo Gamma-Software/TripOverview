@@ -9,7 +9,6 @@ from shutil import copyfile
 import base64
 import folium
 import folium.plugins
-import random
 import branca
 
 from src.overview.OverviewDatabase import OverviewDatabase
@@ -169,13 +168,10 @@ def configure():
         conf = yaml.load(file, Loader=yaml.FullLoader)
         print("Current configuration:", conf)
 
-    print("Write nothing and press enter to keep current configuration")
+    print("Write nothing and press ENTER to keep current configuration")
     print("configure kilometer_source:")
     choice = input("available configuration [\"GPS\" or \"ODO\"]:")
     conf["kilometer_source"] = choice if not "" else conf["kilometer_source"]
-    print("configure database_filepath:")
-    choice = input("")
-    conf["database_filepath"] = choice if not "" else conf["database_filepath"]
     print("configure folium_site_output_path:")
     choice = input("")
     conf["folium_site_output_path"] = choice if not "" else conf["folium_site_output_path"]
