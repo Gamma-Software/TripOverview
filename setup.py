@@ -1,9 +1,11 @@
 import setuptools
 import atexit
 import os
+import yaml
 import platform
 from shutil import copyfile
 from setuptools.command.install import install
+from setuptools.command.develop import develop
 
 ignored_dependencies = []
 
@@ -17,28 +19,36 @@ def get_dependencies():
         return requirements
 
 
-def _post_install():
+def install_configuration():
     print("Configuring Trip Overview app...")
-    path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
-    path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
-    if platform.system() == "Windows":
-        src = os.path.join(os.getcwd(), "data/default_configuration.yaml")
-        path_to_conf = path_to_conf_linux
-    else:
-        src = os.path.join(os.getcwd(), r"data/default_configuration.yaml")
-        path_to_conf = path_to_conf_win
+    path_to_app_data = os.path.join(os.path.expanduser("~"), ".trip_overview")
+    path_to_conf = os.path.join(path_to_app_data, "configuration.yaml")
+    if not os.path.exists(path_to_app_data):
+        print("Create folder", path_to_app_data)
+        os.makedirs(path_to_app_data)
     if not os.path.exists(path_to_conf):
-        print("The default configuration file is not installed")
-        print("Add TripOverview default, ", src, " configuration to ", path_to_conf)
-        copyfile(src, path_to_conf)
+        print("Create Trip Overview configuration")
+        configuration = {"kilometer_source": "GPS",
+                         "folium_site_output_path": ".",
+                         "folium_site_output_filename": "trip_overview",
+                         "database_filepath": os.path.join(path_to_app_data, "database.db")}
+        with open(path_to_conf, 'w+') as file:
+            documents = yaml.dump(configuration, file)
+            print("Write ", configuration, " in ", path_to_conf)
     else:
         print("TripOverview configuration file already installed")
 
 
-class NewInstall(install):
-    def __init__(self, *args, **kwargs):
-        super(NewInstall, self).__init__(*args, **kwargs)
-        atexit.register(_post_install)
+class PostDevelopCommand(develop):
+    def run(self):
+        develop.run(self)
+        install_configuration()
+
+
+class PostInstallCommand(install):
+    def run(self):
+        install.run(self)
+        install_configuration()
 
 
 with open("README.md", "r") as fh:
@@ -70,5 +80,6 @@ setuptools.setup(
         "Site prototype": "https://gamma-software.github.io/",
         "Source Code": "https://github.com/Gamma-Software/TripOverview",
     },
-    cmdclass={'install': NewInstall},
+    cmdclass={'install': PostInstallCommand,
+              'develop': PostDevelopCommand},
 )
