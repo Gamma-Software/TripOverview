@@ -14,9 +14,8 @@ import branca
 from src.overview.OverviewDatabase import OverviewDatabase
 
 trip_data = OverviewDatabase()
-path_to_conf_linux = os.path.join(os.path.expanduser("~"), "/.trip_overview/configuration.yaml")
-path_to_conf_win = os.path.join(os.path.expanduser("~"), r"\.trip_overview\configuration.yaml")
-configuration = dict()
+path_to_conf = os.path.join(os.path.expanduser("~"), ".trip_overview/configuration.yaml") \
+    if platform.system() == "Linux" else os.path.join(os.path.expanduser("~"), ".trip_overview\\configuration.yaml")
 
 
 def save_gps_position(timestamp, lat, lon, elev, speed, km):
@@ -151,23 +150,7 @@ def manual():
 
 
 def configure():
-    # If the default configuration is not install, then configure w/ the default one
-    if platform.system() == "Windows":
-        src = os.path.join(os.getcwd(), "/data/default_configuration.yaml")
-        path_to_conf = path_to_conf_linux
-    else:
-        src = os.path.join(os.getcwd(), r"\data\default_configuration.yaml")
-        path_to_conf = path_to_conf_win
-    if not os.path.exists(path_to_conf):
-        print("The default configuration file is not installed")
-        print("Add TripOverview default, ", src, " configuration to ", path_to_conf)
-        copyfile(src, path_to_conf)
-
-    # First print current configuration
-    with open(path_to_conf) as file:
-        conf = yaml.load(file, Loader=yaml.FullLoader)
-        print("Current configuration:", conf)
-
+    conf = load_config()[1]
     print("Write nothing and press ENTER to keep current configuration")
     print("configure kilometer_source:")
     choice = input("available configuration [\"GPS\" or \"ODO\"]:")
