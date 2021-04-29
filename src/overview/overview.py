@@ -18,8 +18,8 @@ path_to_conf = os.path.join(os.path.expanduser("~"), ".trip_overview/configurati
     if platform.system() == "Linux" else os.path.join(os.path.expanduser("~"), ".trip_overview\\configuration.yaml")
 
 
-def save_gps_position(timestamp, lat, lon, elev, speed, km):
-    trip_data.commit_position(timestamp, lat, lon, elev, speed, km)
+def save_gps_position(args):
+    trip_data.commit_position(args.timestamp, args.latitude, args.longitude, args.elevation, args.speed, args.km)
 
 
 def create_site():
@@ -142,7 +142,7 @@ def create_site():
     # Limit bounds
     map_to_plot.fit_bounds(map_to_plot.get_bounds())
 
-    map_to_plot.save(configuration["database_filepath"] + configuration["folium_site_output_filename"] + ".html")
+    map_to_plot.save(conf["database_filepath"] + conf["folium_site_output_filename"] + ".html")
 
 
 def manual():
@@ -173,9 +173,10 @@ def parse_args(cmd_args: typing.Sequence[str]):
     subparsers = parser.add_subparsers(help='sub-command help')
 
     save_gps_position_parser = subparsers.add_parser('save_gps_position', help='Save GPS position')
-    save_gps_position_parser.add_argument('timestamp', type=str)
+    save_gps_position_parser.add_argument('timestamp', type=int)
     save_gps_position_parser.add_argument('latitude', type=float)
     save_gps_position_parser.add_argument('longitude', type=float)
+    save_gps_position_parser.add_argument('elevation', type=float, help="Vehicle elevation in m")
     save_gps_position_parser.add_argument('speed', type=float, help="Speed of the vehicle in km/h")
     save_gps_position_parser.add_argument('km', type=int, help="Kilometer traveled")
     save_gps_position_parser.set_defaults(func=save_gps_position)
@@ -191,15 +192,28 @@ def parse_args(cmd_args: typing.Sequence[str]):
     return parser.parse_args(args=cmd_args)
 
 
-def main_args(cmd_args: typing.Sequence[str]):
+def load_config():
+    # If the default configuration is not install, then configure w/ the default one
+    if not os.path.exists(path_to_conf):
+        print("The default configuration file is not installed. "
+              "Please reinstall the package: pip install -U trip_overview")
+        return False, None
     # load configuration
-    with open(path_to_conf_win if platform.system() == "Windows" else path_to_conf_linux) as file:
-        configuration = yaml.load(file, Loader=yaml.FullLoader)
-    trip_data.connect_to_database(configuration["database_filepath"])
+    with open(path_to_conf, "r") as file:
+        conf = yaml.load(file, Loader=yaml.FullLoader)
+        print("Current configuration:", conf)
+    return True, conf
 
+
+def main_args(cmd_args: typing.Sequence[str]):
     args = parse_args(cmd_args)
     sys.exit(args.func(args))
 
 
 def main():
-    main_args(sys.argv[1:])
+    loaded, conf = load_config()
+    trip_data.connect_to_database(conf["database_filepath"], True)
+    if loaded:
+        main_args(sys.argv[1:])
+    else:
+        sys.exit("Incorrect configuration")

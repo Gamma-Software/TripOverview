@@ -102,7 +102,6 @@ class OverviewDatabase:
                     cursor.execute(query)
                 self.database.commit()
                 success = True
-                print(f"Query '{query}' executed successfully to enter those data:", data)
             except Error as e:
                 print(f"The error '{e}' occurred")
         return success
@@ -126,7 +125,7 @@ class OverviewDatabase:
                 print(f"The error '{e}' occurred")
         return success, result
 
-    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=0, current_step=-1):
+    def commit_position(self, timestamp, lat, lon, elev, speed=-1, km=0, current_step=0):
         """
         Commit position
         :param timestamp:
