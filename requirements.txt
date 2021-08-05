@@ -1,6 +1,6 @@
 pandas
 geojson
-mysql
+influxdb
 reverse_geocoder
 folium
 pyyaml
