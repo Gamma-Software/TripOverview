@@ -9,6 +9,9 @@ import sys
 import time
 import logging
 import datetime as dt
+from methods import *
+from influxdb import DataFrameClient
+from src.overview.OverviewDatabase import OverviewDatabase
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -33,14 +36,42 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s:%(message)s",
     datefmt='%m/%d/%Y %I:%M:%S %p')
 
+# Influxbd client
+influxdb_client =  DataFrameClient(conf["influxdb"]["url"], conf["influxdb"]["port"], conf["influxdb"]["user"], conf["influxdb"]["pass"], conf["influxdb"]["database"])
+
+# Overview database
+trip_data = OverviewDatabase()
+trip_data.connect_to_database(conf["database_filepath"], True)
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Main loop
 # ----------------------------------------------------------------------------------------------------------------------
 try:
-    while True:
-        print()
+    # Check when the site has been updated, if first time then use today date
+    now = datetime.now()
+    last_update = datetime(now.year, now.month, now.day)
+    if not os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
+        with open("/etc/capsule/trip_overview/last_site_update.txt", "r") as f:
+            last_update = datetime.fromisoformat(f.read())
+
+    df = retrieve_influxdb_data(
+        [last_update.isoformat(), 
+         str(datetime(now.year, now.month, now.day, 23, 55).isoformat())], 
+        influxdb_client, "5s")
+
+    # Commit
+    for index, data in df.iterrows():
+        trip_data.commit_position(dt.datetime(index).timestamp, data["latitude"], data["longitude"], data["altitude"], data["speed"], data["km"])
+
+    create_site(trip_data, conf["site_folder"], now.strftime("%y_%m_%d-%h"))
+
+    # Store last update of site
+    with open("/etc/capsule/trip_overview/last_site_update.txt", "w") as f:
+        f.write(str(datetime(now.year, now.month, now.day+1).isoformat()))
 except KeyboardInterrupt:
     pass
+
+
 logging.info("Stop script")
 sys.exit(0)
