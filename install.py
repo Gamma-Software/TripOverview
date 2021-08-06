@@ -1,12 +1,11 @@
-
 import os
 import re
 import shutil
 
 print("Configuring trip_overview app...")
 path_to_app = "/etc/capsule/trip_overview"
+path_to_var = "/var/opt/trip_overview"
 path_to_log = "/var/log/capsule/trip_overview"
-path_to_conf = "/etc/capsule/trip_overview/config.yaml"
 path_to_conf = "/etc/capsule/trip_overview/config.yaml"
 path_to_services = "/etc/systemd/system/trip_overview.service"
 if not os.path.exists(path_to_app):
@@ -14,6 +13,11 @@ if not os.path.exists(path_to_app):
     os.makedirs(path_to_app, 0o775)
     os.chown(path_to_app, 1000, 0) # Rudloff id and group Root
     os.chmod(path_to_app, 0o775) # Give all read access but Rudloff write access
+if not os.path.exists(path_to_var):
+    print("Create folder", path_to_var)
+    os.makedirs(path_to_var, 0o775)
+    os.chown(path_to_var, 1000, 0) # Rudloff id and group Root
+    os.chmod(path_to_var, 0o775) # Give all read access but Rudloff write access
 if not os.path.exists(path_to_log):
     print("Create folder", path_to_log)
     os.makedirs(path_to_log, 0o644)

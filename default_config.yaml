@@ -1,3 +1,10 @@
 kilometer_source: "GPS"
 folium_site_output_path: "."
 folium_site_output_filename: "trip_overview"
+site_folder: "/var/opt/trip_overview/"
+influxdb:
+  url: "localhost"
+  port: "8086"
+  user: "user"
+  pass: "pass"
+  database: "telegraf"
