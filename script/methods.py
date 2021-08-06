@@ -32,22 +32,28 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
 
     # Filter out only on timestamps
     mask = (results.index >= timestamps[0]) & (results.index <= timestamps[-1])
+
+    results['current_step'] = [0]*len(results.index) # TODO for now the current step will always be 0
+    results['timestamp'] = results.index # Reset index to get timestamp as a column
+    results["timestamp"] = results["timestamp"].apply(lambda x: int(datetime.fromisoformat(str(x)).timestamp()))
+
     return results.loc[mask]
 
 
-from src.overview.OverviewDatabase import OverviewDatabase
+from OverviewDatabase import OverviewDatabase
 import folium
+import folium.plugins
 import base64
 import branca
 
-def create_site(trip_data: OverviewDatabase, site_folder: str, date):
+def create_site(trip_data: OverviewDatabase, site_folder: str, date, url):
     gps_trace = trip_data.get_road_trip_gps_trace()
-    center_of_map = gps_trace[-1]
-    whole_trip_trace = gps_trace[["lat", "lon"]]
-    map_to_plot = folium.Map(center_of_map, zoom_start=10)
+    center_of_map = tuple(gps_trace.tail(1)[["latitude", "longitude"]].iloc[0].values.tolist())
+    whole_trip_trace = gps_trace[["latitude", "longitude"]]
+    map_to_plot = folium.Map(center_of_map, zoom_start=10, tiles=url, attr="Capsule map")
 
     # TODO Handle case where the sub step trace length is not > 1
-    for current_step_trace_idx in range(gps_trace.current_step.iloc[-1].value):
+    for current_step_trace_idx in range(gps_trace.index.values[-1]):
         current_step_trace = gps_trace.loc[current_step_trace_idx]
         if len(current_step_trace) > 1:
             distance_traveled_in_step = 0
@@ -104,13 +110,13 @@ def create_site(trip_data: OverviewDatabase, site_folder: str, date):
     sleep_steps = trip_data.get_sleeping_locations()
     for i in range(len(sleep_steps)):
         html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p>' \
-               '<p>Coordonnée GPS: {lat}, {lon}</p>'.format(date=sleep_steps.date.iloc[i].day,
-                                                            step=sleep_steps.current_step.iloc[i].value,
-                                                            distance=sleep_steps.km.iloc[i].value,
-                                                            lat=sleep_steps.lat.iloc[i].value,
-                                                            lon=sleep_steps.lon.iloc[i].value)
+               '<p>Coordonnée GPS: {lat}, {lon}</p>'.format(date=sleep_steps["date"].iloc[i].day,
+                                                            step=sleep_steps["current_step"].iloc[i].value,
+                                                            distance=sleep_steps["km"].iloc[i].value,
+                                                            lat=sleep_steps["latitude"].iloc[i].value,
+                                                            lon=sleep_steps["longitude"].iloc[i].value)
         icon = folium.Icon(**kw)
-        folium.Marker(location=sleep_steps[["lat", "lon"]][i], icon=icon, tooltip=html).add_to(marker_cluster_steps)
+        folium.Marker(location=sleep_steps[["latitude", "longitude"]][i], icon=icon, tooltip=html).add_to(marker_cluster_steps)
 
     legend_html = """
     {% macro html(this, kwargs) %}

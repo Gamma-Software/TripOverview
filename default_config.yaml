@@ -1,10 +1,13 @@
+debug: True
+database_filepath: "/var/opt/trip_overview/trip_database.db"
 kilometer_source: "GPS"
-folium_site_output_path: "."
-folium_site_output_filename: "trip_overview"
-site_folder: "/var/opt/trip_overview/"
+folium_site_output_path: "/var/opt/trip_overview/trip_overview"
 influxdb:
   url: "localhost"
   port: "8086"
   user: "user"
   pass: "pass"
   database: "telegraf"
+map_generation:
+  url: "http://localhost:8080/styles/klokantech-basic/{zoom}/{x}/{y}.png"
+  tile_name: "osm"

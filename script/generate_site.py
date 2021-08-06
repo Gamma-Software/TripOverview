@@ -8,10 +8,10 @@ import yaml
 import sys
 import time
 import logging
-import datetime as dt
+import datetime
 from methods import *
 from influxdb import DataFrameClient
-from src.overview.OverviewDatabase import OverviewDatabase
+from OverviewDatabase import OverviewDatabase
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ with open(path_to_conf, "r") as file:
 # ----------------------------------------------------------------------------------------------------------------------
 connected = False
 logging.basicConfig(
-    filename="/var/log/capsule/trip_overview/" + dt.datetime.now().strftime("%Y%m%d-%H%M%S") + ".log",
+    filename="/var/log/capsule/trip_overview/" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".log",
     filemode="a",
     level=logging.DEBUG if conf["debug"] else logging.INFO,
     format="%(asctime)s %(levelname)s:%(message)s",
@@ -40,6 +40,7 @@ logging.basicConfig(
 influxdb_client =  DataFrameClient(conf["influxdb"]["url"], conf["influxdb"]["port"], conf["influxdb"]["user"], conf["influxdb"]["pass"], conf["influxdb"]["database"])
 
 # Overview database
+logging.info("connect to database located in " + conf["database_filepath"])
 trip_data = OverviewDatabase()
 trip_data.connect_to_database(conf["database_filepath"], True)
 
@@ -51,23 +52,25 @@ try:
     # Check when the site has been updated, if first time then use today date
     now = datetime.now()
     last_update = datetime(now.year, now.month, now.day)
-    if not os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
+    if os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
         with open("/etc/capsule/trip_overview/last_site_update.txt", "r") as f:
-            last_update = datetime.fromisoformat(f.read())
+            isoformat_date = f.read()
+            last_update = datetime.fromisoformat(isoformat_date)
+            logging.info("last update of the site was " + isoformat_date)
 
     df = retrieve_influxdb_data(
         [last_update.isoformat(), 
          str(datetime(now.year, now.month, now.day, 23, 55).isoformat())], 
         influxdb_client, "5s")
+    
+    df.astype({"km": int}) # set as int
+    trip_data.commit_dataframe(df)
 
-    # Commit
-    for index, data in df.iterrows():
-        trip_data.commit_position(dt.datetime(index).timestamp, data["latitude"], data["longitude"], data["altitude"], data["speed"], data["km"])
-
-    create_site(trip_data, conf["site_folder"], now.strftime("%y_%m_%d-%h"))
+    logging.info("Generate site at "+conf["folium_site_output_path"])
+    create_site(trip_data, conf["folium_site_output_path"], now.strftime("%y_%m_%d-%h"), conf["map_generation"]["url"])
 
     # Store last update of site
-    with open("/etc/capsule/trip_overview/last_site_update.txt", "w") as f:
+    with open("/etc/capsule/trip_overview/last_site_update.txt", "w+") as f:
         f.write(str(datetime(now.year, now.month, now.day+1).isoformat()))
 except KeyboardInterrupt:
     pass

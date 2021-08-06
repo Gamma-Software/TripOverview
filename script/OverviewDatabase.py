@@ -70,7 +70,7 @@ class OverviewDatabase:
             timestamp INTEGER NOT NULL,
             latitude NUMERIC (5, 2) NOT NULL CHECK (latitude>= -90.0 AND latitude<= 90.0),
             longitude NUMERIC (5, 2) NOT NULL CHECK (longitude>= -180.0 AND longitude<= 180.0),
-            elev NUMERIC(7, 2) NOT NULL,
+            altitude NUMERIC(7, 2) NOT NULL,
             speed NUMERIC(6, 2) NOT NULL,
             km INTEGER NOT NULL CHECK (km>= 0.0),
             current_country TEXT NOT NULL,
@@ -137,9 +137,9 @@ class OverviewDatabase:
         """
         Commit position
         :param timestamp:
-        :param latitude: gps latitudeitude
+        :param latitude: gps latitude
         :param longitude: gps longitude
-        :param elev: elevation in meters
+        :param altitude: elevation in meters
         :param speed: speed of the vehicle
         :param km: kilometer traveled
         :param current_step: current step
@@ -158,31 +158,43 @@ class OverviewDatabase:
 
         """which country is the vehicle"""
         countries = []
-        for index, rows in df.iterrows():
-            rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
-            country_codes = pd.read_csv('data/country_info.csv', index_col=0, error_bad_lines=False)
-            countries.append(country_codes.loc[rg.query([(rows["latitude"], rows["longitude"])])[0]["cc"]]["current_country"])
-        df["current_country"] = countries
+        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
+        country_codes = pd.read_csv('data/country_info.csv', index_col=0, error_bad_lines=False)
+        # Execute on gps coords every 6 hours TODO can be optimized
+        tmp_series = df["timestamp"].resample('6H').first()
+        for timestamp in tmp_series:
+            tmp_latitude = df["latitude"].loc[df["timestamp"] == timestamp].values[0]
+            tmp_longitude = df["longitude"].loc[df["timestamp"] == timestamp].values[0]
+            countries.append(country_codes.loc[rg.query([(tmp_latitude, tmp_longitude)])[0]["cc"]]["Country"])
+        tmp_df = tmp_series.to_frame()
+        tmp_df["current_country"] = countries
+        tmp_df.drop(["timestamp"], axis=1, inplace=True)
+        df.set_index("timestamp")
+        df = pd.concat([df, tmp_df], axis=1)
+        df.fillna(method="bfill", inplace=True)
+        df.fillna(method="ffill", inplace=True)
+        
+        # Remove row where the vehicle is still (but keep the first value to avoid clearing the dataframe)
+        df.drop(df[df["speed"] < 5.0].index[1:], inplace=True)
 
         insert_stmt = (
-            "INSERT INTO trip_data (timestamp, latitude, longitude, elev, speed, km, current_country, current_step) "
+            "INSERT INTO trip_data (timestamp, latitude, longitude, altitude, speed, km, current_country, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
-        val = []
-        for index, row in df.iterrows():
-            val.append(tuple(row.values))
-        values = (', '.join(map(str, val)))
-        if not self.execute_query(query=insert_stmt, mode="multiple",
-                              data=values):
-            print(f"Values '{timestamp, latitude, longitude, elev, speed, km, current_country, current_step}' failed to be committed")
 
-    def commit_position(self, timestamp, latitude, longitude, elev, speed=-1, km=0, current_step=0):
+        # Reorder the dataframe just in case
+        df = df[["timestamp", "latitude", "longitude", "altitude", "speed", "km", "current_country", "current_step"]]
+
+        if not self.execute_query(query=insert_stmt, mode="multiple", data=df.values):
+            print("failed to be committed")
+
+    def commit_position(self, timestamp, latitude, longitude, altitude, speed=-1, km=0, current_step=0):
         """
         Commit position
         :param timestamp:
         :param latitude: gps latitude
         :param longitude: gps longitude
-        :param elev: elevation in meters
+        :param altitude: elevation in meters
         :param speed: speed of the vehicle
         :param km: kilometer traveled
         :param current_step: current step
@@ -204,12 +216,12 @@ class OverviewDatabase:
         current_country = country_codes.loc[rg.query([(latitude, longitude)])[0]["cc"]]["Country"]
 
         insert_stmt = (
-            "INSERT INTO trip_data (timestamp, latitude, longitude, elev, speed, km, current_country, current_step) "
+            "INSERT INTO trip_data (timestamp, latitude, longitude, altitude, speed, km, current_country, current_step) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
         if not self.execute_query(query=insert_stmt, mode="single",
-                              data=(timestamp, latitude, longitude, elev, speed, km, current_country, current_step)):
-            print(f"Values '{timestamp, latitude, longitude, elev, speed, km, current_country, current_step}' failed to be committed")
+                              data=(timestamp, latitude, longitude, altitude, speed, km, current_country, current_step)):
+            print(f"Values '{timestamp, latitude, longitude, altitude, speed, km, current_country, current_step}' failed to be committed")
 
     def describe_trip(self):
         """
@@ -279,14 +291,14 @@ class OverviewDatabase:
         gps_trace = self.raw_data.copy()
         # Change timestamp to datetime
         gps_trace['date'] = pd.to_datetime(gps_trace['timestamp'], unit='s')
-        # Resample by time and interpolatitudee linearly TODO technical debt resample by time
+        # Resample by time and interpolat linearly TODO technical debt resample by time
         # gps_trace.resample(str(max_time_sampling)+"S", on="timestamp").mean()
         # Remove the current index (the default one)
         # Remove trace static traces
-        gps_trace.drop(gps_trace[gps_trace.speed < 10.0].index, inplace=True)
+        #gps_trace.drop(gps_trace[gps_trace.speed < 10.0].index, inplace=True) # TODO This is not needed anymore
         gps_trace.reset_index(drop=True, inplace=True)
-        # Interpolatitudee the correct columns
-        gps_trace[["latitude", "longitude", "elev", "speed", "km"]] = gps_trace[["latitude", "longitude", "elev", "speed", "km"]].interpolatitudee(
+        # Interpolate the correct columns
+        gps_trace[["latitude", "longitude", "altitude", "speed", "km"]] = gps_trace[["latitude", "longitude", "altitude", "speed", "km"]].interpolate(
             method='linear')
         # Fill forward current_country and current_step
         gps_trace["current_country"].fillna(method='ffill', inplace=True)
@@ -319,7 +331,7 @@ class OverviewDatabase:
             unit km
             min > 0, max: inf
             default: 10
-        :return: pandas.DataFrame sleeping positions [timestamp, latitude, longitude, elev]
+        :return: pandas.DataFrame sleeping positions [timestamp, latitude, longitude, altitude]
         """
         # Parameter safeguards
         if static_position_threshold <= 0:
@@ -346,4 +358,4 @@ class OverviewDatabase:
                                                              sleeping_df[["latitude", "longitude"]].iloc[i].values)
         # Filter positions that distance is sufficient
         sleeping_df = sleeping_df[sleeping_df.dist_from_last >= min_distance]
-        return sleeping_df[["timestamp", "latitude", "longitude", "elev"]].copy()
+        return sleeping_df[["timestamp", "latitude", "longitude", "altitude"]].copy()
