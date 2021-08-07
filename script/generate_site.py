@@ -60,10 +60,9 @@ try:
 
     df = retrieve_influxdb_data(
         [last_update.isoformat(), 
-         str(datetime(now.year, now.month, now.day, 23, 55).isoformat())], 
+         str(datetime(now.year, now.month, now.day, 23, 55).isoformat())],
         influxdb_client, "5s")
     
-    df.astype({"km": int}) # set as int
     trip_data.commit_dataframe(df)
 
     logging.info("Generate site at "+conf["folium_site_output_path"])

@@ -37,6 +37,8 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     results['timestamp'] = results.index # Reset index to get timestamp as a column
     results["timestamp"] = results["timestamp"].apply(lambda x: int(datetime.fromisoformat(str(x)).timestamp()))
 
+    results.astype({"km": int}) # set km as int
+
     return results.loc[mask]
 
 
