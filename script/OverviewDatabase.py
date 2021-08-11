@@ -158,8 +158,8 @@ class OverviewDatabase:
 
         """which country is the vehicle"""
         countries = []
-        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('data/reverse_geocoder.csv', encoding='utf-8').read()))
-        country_codes = pd.read_csv('data/country_info.csv', index_col=0, error_bad_lines=False)
+        rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/reverse_geocoder.csv', encoding='utf-8').read()))
+        country_codes = pd.read_csv('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/country_info.csv', index_col=0, error_bad_lines=False)
         # Execute on gps coords every 6 hours TODO can be optimized
         tmp_series = df["timestamp"].resample('6H').first()
         for timestamp in tmp_series:
