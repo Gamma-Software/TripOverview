@@ -58,19 +58,23 @@ try:
             last_update = datetime.fromisoformat(isoformat_date)
             logging.info("last update of the site was " + isoformat_date)
 
-    df = retrieve_influxdb_data(
-        [last_update.isoformat(), 
-         str(datetime(now.year, now.month, now.day, 23, 55).isoformat())],
-        influxdb_client, "5s")
-    
-    trip_data.commit_dataframe(df)
+    if last_update.strftime("%Y_%m_%d") != now.strftime("%Y_%m_%d"):
+        df = retrieve_influxdb_data(
+            [last_update.isoformat(), 
+            str(datetime(now.year, now.month, now.day, 23, 55).isoformat())],
+            influxdb_client, "5s")
+        
+        trip_data.commit_dataframe(df)
 
-    logging.info("Generate site at "+conf["folium_site_output_path"])
-    create_site(trip_data, conf["folium_site_output_path"], now.strftime("%Y_%m_%d"), conf["map_generation"]["url"])
+        logging.info("Generate site at "+conf["folium_site_output_path"])
+        create_site(trip_data, conf["folium_site_output_path"], now.strftime("%Y_%m_%d"), conf["map_generation"]["url"])
 
-    # Store last update of site
-    with open("/etc/capsule/trip_overview/last_site_update.txt", "w+") as f:
-        f.write(str(datetime(now.year, now.month, now.day).isoformat()))
+        # Store last update of site
+        with open("/etc/capsule/trip_overview/last_site_update.txt", "w+") as f:
+            f.write(str(datetime(now.year, now.month, now.day).isoformat()))
+    else:
+        print("Site already updated")
+        logging.info("Site already updated")
 except KeyboardInterrupt:
     pass
 
