@@ -1,12 +1,12 @@
 [Unit]
-Description=Connect and parse GPS measures and publish on mqtt server
+Description=Parse last updated trip data and generate trip overview site
 Requires=docker.service
 After=docker.service
 Wants=docker.service
 
 [Service]
 ExecStartPre=/bin/sleep 10
-ExecStart=/home/rudloff/sources/CapsuleScripts/devices_driver/gps/.venv/bin/python3 /home/rudloff/sources/CapsuleScripts/devices_driver/gps/gps_measure.py
+ExecStart=/home/rudloff/sources/CapsuleScripts/servers/trip-overview/tripenv/bin/python3 /home/rudloff/sources/CapsuleScripts/servers/trip-overview/script/generate_site.py
 Restart=on-failure
  
 [Install]
