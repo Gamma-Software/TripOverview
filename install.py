@@ -4,8 +4,8 @@ import shutil
 
 print("Configuring trip_overview app...")
 path_to_app = "/etc/capsule/trip_overview"
-path_to_var = "/var/opt/trip_overview"
-path_to_log = "/var/log/capsule/trip_overview"
+path_to_var = "/var/opt/trip_overview/saves"
+path_to_log = "/var/log/capsule"
 path_to_conf = "/etc/capsule/trip_overview/config.yaml"
 path_to_services = "/etc/systemd/system/trip_overview.service"
 if not os.path.exists(path_to_app):
