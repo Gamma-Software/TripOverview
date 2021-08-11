@@ -30,7 +30,7 @@ with open(path_to_conf, "r") as file:
 # ----------------------------------------------------------------------------------------------------------------------
 connected = False
 logging.basicConfig(
-    filename="/var/log/capsule/trip_overview/" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".log",
+    filename="/var/log/capsule/trip_overview.log",
     filemode="a",
     level=logging.DEBUG if conf["debug"] else logging.INFO,
     format="%(asctime)s %(levelname)s:%(message)s",
@@ -54,7 +54,7 @@ try:
     last_update = datetime(now.year, now.month, now.day)
     if os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
         with open("/etc/capsule/trip_overview/last_site_update.txt", "r") as f:
-            isoformat_date = f.read()
+            isoformat_date = f.readline().strip("\n")
             last_update = datetime.fromisoformat(isoformat_date)
             logging.info("last update of the site was " + isoformat_date)
 
@@ -66,11 +66,11 @@ try:
     trip_data.commit_dataframe(df)
 
     logging.info("Generate site at "+conf["folium_site_output_path"])
-    create_site(trip_data, conf["folium_site_output_path"], now.strftime("%y_%m_%d-%h"), conf["map_generation"]["url"])
+    create_site(trip_data, conf["folium_site_output_path"], now.strftime("%Y_%m_%d"), conf["map_generation"]["url"])
 
     # Store last update of site
     with open("/etc/capsule/trip_overview/last_site_update.txt", "w+") as f:
-        f.write(str(datetime(now.year, now.month, now.day+1).isoformat()))
+        f.write(str(datetime(now.year, now.month, now.day).isoformat()))
 except KeyboardInterrupt:
     pass
 
