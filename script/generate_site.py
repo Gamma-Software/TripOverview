@@ -51,13 +51,13 @@ trip_data.connect_to_database(conf["database_filepath"], True)
 try:
     # Check when the site has been updated, if first time then use today date
     now = datetime.now()
-    last_update = datetime(now.year, now.month, now.day)
+    last_update = datetime(now.year, now.month, now.day-1)
     if os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
         with open("/etc/capsule/trip_overview/last_site_update.txt", "r") as f:
             isoformat_date = f.readline().strip("\n")
             last_update = datetime.fromisoformat(isoformat_date)
             logging.info("last update of the site was " + isoformat_date)
-
+    
     if last_update.strftime("%Y_%m_%d") != now.strftime("%Y_%m_%d"):
         df = retrieve_influxdb_data(
             [last_update.isoformat(), 
