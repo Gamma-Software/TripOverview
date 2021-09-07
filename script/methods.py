@@ -49,7 +49,6 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     longitude = query("gps_measure/longitude")
     altitude = query("gps_measure/altitude")
     speed = query("gps_measure/speed")
-    #km = query("odometry/km")
 
     # Clean the values to one specific DataFrame
     results = pd.DataFrame()
