@@ -1,8 +1,38 @@
+from typing_extensions import runtime
 from influxdb import DataFrameClient
 from datetime import datetime, timedelta
 from typing import List
 import pandas as pd
+import numpy as np
+from math import sin, cos, sqrt, atan2, radians
 
+from src.overview.OverviewDatabase import OverviewDatabase
+import folium
+import folium.plugins
+import base64
+import branca
+
+def dist_from_gps(coord_a, coord_b):
+    """
+    Haversine’s algorithm
+    param: decimal gps coord_a [lat, lon]
+    param: decimal gps coord_b [lat, lon]
+    result: distance between two gps coords
+    """
+    R = 6373.0 # approximate radius of earth in km
+
+    lat1 = radians(coord_a[0])
+    lon1 = radians(coord_a[1])
+    lat2 = radians(coord_b[0])
+    lon2 = radians(coord_b[1])
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return R * c
 
 def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resampling_time: str) -> pd.DataFrame():
     start = (datetime.fromisoformat(timestamps[0]) + timedelta(seconds=-5)).isoformat()
@@ -27,8 +57,13 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     results["longitude"] = longitude["mean"]
     results["altitude"] = altitude["mean"]
     results["speed"] = speed["mean"]
-    results["km"] = speed["mean"] # TODO replace with km when ready
-    results.columns = ["latitude", "longitude", "altitude", "speed", "km"]
+    results["km"] = 0 # Fill the km of 0
+    # This is computed from the last and current gps position
+    for i in range(1, len(results["longitude"])):
+        results["km"].iloc[i] = dist_from_gps(
+            [results["latitude"].iloc[i-1], results["longitude"].iloc[i-1]],
+            [results["latitude"].iloc[i], results["longitude"].iloc[i]]) # TODO Call from df can be optimized
+    results.columns = ["latitude", "longitude", "altitude", "speed", "km"] # Sort correctly the columns
 
     # Filter out only on timestamps
     mask = (results.index >= timestamps[0]) & (results.index <= timestamps[-1])
@@ -41,12 +76,6 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
 
     return results.loc[mask]
 
-
-from OverviewDatabase import OverviewDatabase
-import folium
-import folium.plugins
-import base64
-import branca
 
 def create_site(trip_data: OverviewDatabase, site_folder: str, date, url):
     gps_trace = trip_data.get_road_trip_gps_trace()
