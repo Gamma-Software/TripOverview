@@ -49,21 +49,23 @@ trip_data.connect_to_database(conf["database_filepath"], True)
 # Main loop
 # ----------------------------------------------------------------------------------------------------------------------
 try:
-    # Check when the site has been updated, if first time then use today date
+    # Check when the site was updated, if first time then use yesterday’s date
     now = datetime.now()
-    last_update = datetime(now.year, now.month, now.day-1)
+    last_update = datetime(now.year, now.month, now.day-1, now.hour, now.minute, now.second)
     if os.path.exists("/etc/capsule/trip_overview/last_site_update.txt"):
         with open("/etc/capsule/trip_overview/last_site_update.txt", "r") as f:
             isoformat_date = f.readline().strip("\n")
             last_update = datetime.fromisoformat(isoformat_date)
             logging.info("last update of the site was " + isoformat_date)
     
-    if last_update.strftime("%Y_%m_%d") != now.strftime("%Y_%m_%d"):
+    # Check if the last time the trip overview is generated is older than 12h (or 60*60*12=43200s) at least
+    if (now - last_update).seconds > 43200:
+        # Get the datas from influxdb with some grouping policies
         df = retrieve_influxdb_data(
-            [last_update.isoformat(), 
-            str(datetime(now.year, now.month, now.day, 23, 55).isoformat())],
+            [last_update.isoformat(), now.isoformat()],
             influxdb_client, "5s")
         
+        # Save the digests data in a different database
         trip_data.commit_dataframe(df)
 
         logging.info("Generate site at "+conf["folium_site_output_path"])

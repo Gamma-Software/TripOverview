@@ -31,6 +31,7 @@ TODO
   - Photos/Timelapse taken during the road trip
 - Display a pre-programmed road trip (from GPX, KML)
 - Use https://openmaptiles.org/docs/ to create an offline map server and download the map tiles in https://data.maptiler.com/downloads/planet/
+- The Trip Overview generation rate is limited to 12h. Thus you won’t be able to generate the site every hours
 
 ## Contribute
 Read the CONTRIBUTING.md for details
