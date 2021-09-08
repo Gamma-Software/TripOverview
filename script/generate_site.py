@@ -68,18 +68,18 @@ try:
         # Save the digests data in a different database
         trip_data.commit_dataframe(df)
 
-        logging.info("Generate site at "+conf["folium_site_output_path"])
+        logging.info("Generate Trip overview at "+conf["folium_site_output_path"])
         create_site(trip_data, conf["folium_site_output_path"], now.strftime("%Y_%m_%d"), conf["map_generation"]["url"])
 
         # Store last update of site
         with open("/etc/capsule/trip_overview/last_site_update.txt", "w+") as f:
-            f.write(str(datetime(now.year, now.month, now.day).isoformat()))
+            f.write(str(now.isoformat()))
     else:
-        print("Site already updated")
-        logging.info("Site already updated")
+        print("Trip overview already updated")
+        logging.info("Trip overview already updated")
 except KeyboardInterrupt:
+    logging.info("Trip overview generation aborted by user")
     pass
-
 
 logging.info("Stop script")
 sys.exit(0)
