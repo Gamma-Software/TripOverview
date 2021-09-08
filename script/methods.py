@@ -59,7 +59,7 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     results["km"] = 0 # Fill the km of 0
     # This is computed from the last and current gps position
     for i in range(1, len(results["longitude"])):
-        results["km"].iloc[i] = dist_from_gps(
+        results["km"].iloc[i] = results["km"].iloc[i-1] + dist_from_gps(
             [results["latitude"].iloc[i-1], results["longitude"].iloc[i-1]],
             [results["latitude"].iloc[i], results["longitude"].iloc[i]]) # TODO Call from df can be optimized
     results.columns = ["latitude", "longitude", "altitude", "speed", "km"] # Sort correctly the columns
