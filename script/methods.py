@@ -78,50 +78,53 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
 
 def create_site(trip_data: OverviewDatabase, site_folder: str, date, url):
     gps_trace = trip_data.get_road_trip_gps_trace()
-    center_of_map = tuple(gps_trace.tail(1)[["latitude", "longitude"]].iloc[0].values.tolist())
+    center_of_map = gps_trace[["latitude", "longitude"]].iloc[-1].tolist() # Last updated GPS position
     whole_trip_trace = gps_trace[["latitude", "longitude"]]
-    map_to_plot = folium.Map(center_of_map, zoom_start=10, tiles=url, attr="Capsule map")
+    offline_map = [folium.Map(center_of_map, tiles=url, attr="Capsule map"), "offline"]
+    online_map = [folium.Map(center_of_map, tiles="OpenStreetMap", attr="Capsule map"), "online"]
 
-    # TODO Handle case where the sub step trace length is not > 1
-    for current_step_trace_idx in range(gps_trace.index.values[-1]):
-        current_step_trace = gps_trace.loc[current_step_trace_idx]
-        if len(current_step_trace) > 1:
-            distance_traveled_in_step = 0
-            for km_idx in range(1, len(current_step_trace["km"])):
-                distance_traveled_in_step += current_step_trace["km"][km_idx] - current_step_trace["km"][km_idx - 1]
-            date = current_step_trace["date"][0].day
-            """gif = "test.gif" # TODO
-            tooltip_html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p><img src={gif}>'\
-                .format(date=distance_traveled_in_step,
-                        step=current_step_trace_idx,
-                        distance=distance_traveled_in_step,
-                        gif=gif)"""
-            folium.plugins.AntPath(
-                locations=current_step_trace,
-                dash_array=[10, 15],
-                delay=800,
-                weight=6,
-                color="#F6FFF3",
-                pulse_color="#000000",
-                paused=False,
-                reverse=False,
-                #tooltip=tooltip_html TODO
-            ).add_to(map_to_plot)   
+    for map_data in [offline_map, online_map]:
+        map = map_data[0]
+        # TODO Handle case where the sub step trace length is not > 1
+        for current_step_trace_idx in range(gps_trace.index.values[-1]):
+            current_step_trace = gps_trace.loc[current_step_trace_idx]
+            if len(current_step_trace) > 1:
+                distance_traveled_in_step = 0
+                for km_idx in range(1, len(current_step_trace["km"])):
+                    distance_traveled_in_step += current_step_trace["km"][km_idx] - current_step_trace["km"][km_idx - 1]
+                date = current_step_trace["date"][0].day
+                """gif = "test.gif" # TODO
+                tooltip_html = '<h1>{date}</h1><p>Etape {step}</p><p>Distance parcourue {distance} km</p><img src={gif}>'\
+                    .format(date=distance_traveled_in_step,
+                            step=current_step_trace_idx,
+                            distance=distance_traveled_in_step,
+                            gif=gif)"""
+                folium.plugins.AntPath(
+                    locations=current_step_trace,
+                    dash_array=[10, 15],
+                    delay=800,
+                    weight=6,
+                    color="#F6FFF3",
+                    pulse_color="#000000",
+                    paused=False,
+                    reverse=False,
+                    #tooltip=tooltip_html TODO
+                ).add_to(map)
 
-    folium.LayerControl(collapsed=False).add_to(map_to_plot)
+        folium.LayerControl(collapsed=False).add_to(map)
 
-    folium.plugins.LocateControl().add_to(map_to_plot)
+        folium.plugins.LocateControl().add_to(map)
 
-    folium.plugins.Fullscreen(
-        title="Agrandir",
-        title_cancel="Annuler",
-        force_separate_button=True,
-    ).add_to(map_to_plot)
+        folium.plugins.Fullscreen(
+            title="Agrandir",
+            title_cancel="Annuler",
+            force_separate_button=True,
+        ).add_to(map)
 
-    # Limit bounds
-    map_to_plot.fit_bounds(map_to_plot.get_bounds())
+        # Limit bounds
+        map.fit_bounds(map.get_bounds())
 
-    map_to_plot.save(site_folder+"saves/"+date+".html")
-    print("Saved in ", site_folder+"saves/"+date+".html")
-    map_to_plot.save(site_folder+"index.html")
-    print("Saved in ", site_folder+"index.html")
+        map.save(site_folder+"saves/"+map_data[1]+"_"+date+".html")
+        print("Saved in ", site_folder+"saves/"+map_data[1]+"_"+date+".html")
+        map.save(site_folder+map_data[1]+"_index.html")
+        print("Saved in ", site_folder+map_data[1]+"_index.html")
