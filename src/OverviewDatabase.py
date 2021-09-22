@@ -161,7 +161,7 @@ class OverviewDatabase:
         rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/reverse_geocoder.csv', encoding='utf-8').read()))
         country_codes = pd.read_csv('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/country_info.csv', index_col=0, error_bad_lines=False)
         # Execute on gps coords every 6 hours TODO can be optimized
-        tmp_series = df["timestamp"].resample('6H').first()
+        tmp_series = df["timestamp"].resample('6H').first().dropna() 
         for timestamp in tmp_series:
             tmp_latitude = df["latitude"].loc[df["timestamp"] == timestamp].values[0]
             tmp_longitude = df["longitude"].loc[df["timestamp"] == timestamp].values[0]
@@ -173,9 +173,6 @@ class OverviewDatabase:
         df = pd.concat([df, tmp_df], axis=1)
         df.fillna(method="bfill", inplace=True)
         df.fillna(method="ffill", inplace=True)
-        
-        # Remove row where the vehicle is still (but keep the first value to avoid clearing the dataframe)
-        df.drop(df[df["speed"] < 5.0].index[1:], inplace=True)
 
         insert_stmt = (
             "INSERT INTO trip_data (timestamp, latitude, longitude, altitude, speed, km, current_country, current_step) "
