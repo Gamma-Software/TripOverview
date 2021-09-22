@@ -63,11 +63,10 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     results["km"] = 0 # Fill the km of 0
 
     # Remove duplicates (if the vehicle hasn't moved)
-    c_maxes = results.groupby(['latitude', 'longitude']).C.transform(max)
-    results = results.loc[results.C == c_maxes]
+    results.drop_duplicates(subset=['latitude', 'longitude'], keep='last', inplace=True)
 
     # Remove data when the vehicle hasn't moved based on its speed
-    results.drop(results[results["speed"] < 0.1].index[1:], inplace=True) # Remove all but the first
+    results.drop(results[results["speed"] < 1.0].index[1:], inplace=True) # Remove all but the first
 
     # This is computed from the last and current gps position
     for i in range(1, len(results["longitude"])):
@@ -225,7 +224,7 @@ def create_site(trip_data: OverviewDatabase, site_folder: str, date, url):
             
             folium.Marker(list(current_sleep_location),
             icon=icon, tooltip=html.format(
-                date=datetime.datetime.strftime(current_step_trace["date"].iloc[-1], "%d %B %Y"),
+                date=datetime.strftime(current_step_trace["date"].iloc[-1], "%d %B %Y"),
                 step=current_step_trace_idx+1,
                 km=round(current_step_trace["km"].iloc[-1], 1),
                 lat=current_sleep_location[0], 
