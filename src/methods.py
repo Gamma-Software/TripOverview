@@ -33,9 +33,9 @@ def dist_from_gps(coord_a, coord_b):
 
     return R * c
 
-def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resampling_time: str) -> pd.DataFrame():
-    start = (datetime.fromisoformat(timestamps[0]) + timedelta(seconds=-5)).isoformat()
-    end = (datetime.fromisoformat(timestamps[-1]) + timedelta(seconds=5)).isoformat()
+def retrieve_influxdb_data(iso_dates,  influxdb_client: DataFrameClient, resampling_time: str) -> pd.DataFrame():
+    start = (datetime.fromisoformat(iso_dates[0]) + timedelta(seconds=-5)).isoformat()
+    end = (datetime.fromisoformat(iso_dates[-1]) + timedelta(seconds=5)).isoformat()
     # Query the lat and lon values inside of the first and last + margin timestamps
     def query(topic: str):    
         result = influxdb_client.query("SELECT MEAN(\"value\") FROM \"autogen\".\"mqtt_consumer\" WHERE (\"topic\"\
@@ -51,7 +51,6 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     longitude = query("gps_measure/longitude")
     altitude = query("gps_measure/altitude")
     speed = query("gps_measure/speed")
-
 
     # Clean the values to one specific DataFrame
     results = pd.DataFrame()
@@ -76,13 +75,13 @@ def retrieve_influxdb_data(timestamps,  influxdb_client: DataFrameClient, resamp
     results.columns = ["latitude", "longitude", "altitude", "speed", "km"] # Sort correctly the columns
 
     # Filter out only on timestamps
-    mask = (results.index >= timestamps[0]) & (results.index <= timestamps[-1])
+    mask = (results.index >= iso_dates[0]) & (results.index <= iso_dates[-1])
 
     results['current_step'] = [0]*len(results.index) # TODO for now the current step will always be 0
     results['timestamp'] = results.index # Reset index to get timestamp as a column
-    results["timestamp"] = results["timestamp"].apply(lambda x: int(datetime.fromisoformat(str(x)).timestamp()))
+    results["iso_date"] = results["timestamp"].apply(lambda x: int(datetime.fromisoformat(str(x)).timestamp()))
 
-    results.astype({"km": int}) # set km as int
+    results.astype({"km": int, "timestamp": int, "current_step": int}) # set columns as int
 
     return results.loc[mask]
 

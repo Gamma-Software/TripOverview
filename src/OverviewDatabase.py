@@ -72,7 +72,7 @@ class OverviewDatabase:
             longitude NUMERIC (5, 2) NOT NULL CHECK (longitude>= -180.0 AND longitude<= 180.0),
             altitude NUMERIC(7, 2) NOT NULL,
             speed NUMERIC(6, 2) NOT NULL,
-            km INTEGER NOT NULL CHECK (km>= 0.0),
+            km NUMERIC(6, 2) NOT NULL CHECK (km>= 0.0),
             current_country TEXT NOT NULL,
             current_step INTEGER NOT NULL CHECK (current_step>= 0),
             PRIMARY KEY(timestamp)
@@ -161,15 +161,15 @@ class OverviewDatabase:
         rg = reverse_geocoder.RGeocoder(stream=io.StringIO(open('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/reverse_geocoder.csv', encoding='utf-8').read()))
         country_codes = pd.read_csv('/home/rudloff/sources/CapsuleScripts/servers/trip-overview/data/country_info.csv', index_col=0, error_bad_lines=False)
         # Execute on gps coords every 6 hours TODO can be optimized
-        tmp_series = df["timestamp"].resample('6H').first().dropna() 
-        for timestamp in tmp_series:
-            tmp_latitude = df["latitude"].loc[df["timestamp"] == timestamp].values[0]
-            tmp_longitude = df["longitude"].loc[df["timestamp"] == timestamp].values[0]
+        tmp_series = df["iso_date"].resample('6H').first().dropna() 
+        for current_iso_date in tmp_series:
+            tmp_latitude = df["latitude"].loc[df["iso_date"] == current_iso_date].values[0]
+            tmp_longitude = df["longitude"].loc[df["iso_date"] == current_iso_date].values[0]
             countries.append(country_codes.loc[rg.query([(tmp_latitude, tmp_longitude)])[0]["cc"]]["Country"])
         tmp_df = tmp_series.to_frame()
         tmp_df["current_country"] = countries
-        tmp_df.drop(["timestamp"], axis=1, inplace=True)
-        df.set_index("timestamp")
+        tmp_df.drop(["iso_date"], axis=1, inplace=True)
+        df.set_index("iso_date")
         df = pd.concat([df, tmp_df], axis=1)
         df.fillna(method="bfill", inplace=True)
         df.fillna(method="ffill", inplace=True)
